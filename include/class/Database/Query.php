@@ -35,13 +35,9 @@ class Query extends \BerlinDB\Database\Query {
 
     public function __construct($query = array()) {
 
-        //$this->table_name = \MADkit\Modules\Handler::get_default_table_name($module_name);
         $this->table_alias = substr(md5($this->table_name), 0, 3);
-        //$this->table_schema = '\\'.$namespace . '\\'.$module_name. '\Schema';
         $this->item_name = strtolower($this->table_name) . '_record';
         $this->item_name_plural = strtolower($this->table_name) . '_records';
-        //$this->item_shape = class_exists('\\'.$namespace . '\\'.$module_name.'\Row')?'\\'.$namespace . '\\'.$module_name.'\Row':'';
-
         $this->math_functions['sum'] = false;
 
         /* BerlinDB does not have support for SUM, hence workaround using COUNT
@@ -60,20 +56,20 @@ class Query extends \BerlinDB\Database\Query {
                 $query['groupby'] = array();
             array_unshift($query['groupby'], implode(',', $query['sum']));
             $query['count'] = true;
-            add_filter($this->item_name_plural . '_query_clauses', array($this, 'tb_query_override'));
+            add_filter($this->item_name_plural . '_query_clauses', array($this, 'query_override'));
         }
 
         $retval = parent::__construct($query);
 
         if (isset($query['sum'])) {
-            remove_filter($this->item_name_plural . '_query_clauses', array($this, 'tb_query_override'));
+            remove_filter($this->item_name_plural . '_query_clauses', array($this, 'query_override'));
             $this->math_functions['sum'] = false;
         }
 
         return $retval;
     }
 
-    function tb_query_override($args) {
+    function query_override($args) {
         if ($this->math_functions['sum']) {
             $sum_columns = array();
             $as_sentence = __('Total', 'time_beans');
