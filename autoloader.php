@@ -17,11 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 // Exit if accessed directly.
 defined( 'ABSPATH' ) || exit;
 
-// Register a closure to autoload BerlinDB.
 spl_autoload_register(
 
 	/**
