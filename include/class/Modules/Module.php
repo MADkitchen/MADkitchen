@@ -51,33 +51,36 @@ class Module {
 
     protected function init_module() {
         //TODO: check tests
-        //Table
-        if (isset($this->table_data['schema'])) {
+        //Database support
+        if (isset($this->table_data['columns']) && isset($this->table_data['schema'])) { //TODO: check if table_data['schema'] is actuallya a minimum requirement
+            //Schema
+            $columns = var_export($this->table_data['columns'], true);
+            eval("namespace $this->namespace;class Schema extends \BerlinDB\Database\Schema{protected \$columns=$columns;}");
+
+            //Table
             $schema = addslashes($this->table_data['schema']);
             eval("namespace $this->namespace;class Table extends \MADkit\Database\Table{public \$name=\"$this->table_name\";protected \$schema=\"$schema\";}");
-            $class="$this->namespace\\Table";
+
+            //Query
+            $table_schema = $this->namespace . '\\Schema';
+            eval("namespace $this->namespace;class Query extends \MADkit\Database\Query{protected \$table_name=\"$this->table_name\";protected \$table_schema=\"$table_schema\";}");
+
+            //Autoload Table class
+            $class = "$this->namespace\\Table";
             new $class;
         }
 
-        //Schema
-        if (isset($this->table_data['columns'])) {
-            $columns = var_export($this->table_data['columns'], true);
-            eval("namespace $this->namespace;class Schema extends \BerlinDB\Database\Schema{protected \$columns=$columns;}");
-        }
-
-        //Query
-        $table_schema = $this->namespace . '\\Schema';
-        eval("namespace $this->namespace;class Query extends \MADkit\Database\Query{protected \$table_name=\"$this->table_name\";protected \$table_schema=\"$table_schema\";}");
-
-        //Pages
+        //Custom pages support
         if ($this->pages_data) {
             $pages = var_export($this->pages_data, true);
             eval("namespace $this->namespace;class Page extends \MADkit\Frontend\Page{protected \$module_name=\"$this->name\";protected \$pages=$pages;}");
-            $class="$this->namespace\\Page";
+
+            //Autoload Page class
+            $class = "$this->namespace\\Page";
             new $class;
         }
 
-        //Other includes
+        //Default includes
         $init_includes = array("functions.php");
         foreach ($init_includes as $item) {
             $target = MK_MODULES_PATH . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $item;
