@@ -39,7 +39,7 @@ class Module {
         $this->init_module();
     }
 
-    public function query($query) {
+    public function query($query = array()) {
         $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\Query";
         return new $class($this->name, $this->namespace, $query);
     }
