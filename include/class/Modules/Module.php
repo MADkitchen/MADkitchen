@@ -41,12 +41,12 @@ class Module {
 
     public function query($query = array()) {
         $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\Query";
-        return new $class($this->name, $this->namespace, $query);
+        return new $class($query);
     }
 
     protected function table() {
         $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\Table";
-        return new $class($this->name);
+        return new $class();
     }
 
     protected function init_module() {
