@@ -21,20 +21,19 @@ namespace MADkit\Modules;
 
 class Module {
 
-    protected $module_dependencies = array();
+    protected $dependencies = array();
+    protected $autoload = false;
     protected $name = '';
     protected $table_name = '';
     protected $namespace = '';
     protected $table_data = array();
     protected $pages_data = array();
 
-    public function __construct($query = array()) {
+    public function __construct() {
 
         $this->namespace = get_class($this);
         //TODO: check if incorporate here
         $this->name = \MADkit\Modules\Handler::get_module_name($this->namespace);
-        //TODO: check if incorporate here
-        $this->table_name = \MADkit\Modules\Handler::get_default_table_name($this->name);
 
         $this->init_module();
     }
@@ -49,10 +48,13 @@ class Module {
         return new $class();
     }
 
-    protected function init_module() {
+    public function load_module() {
         //TODO: check tests
         //Database support
-        if (isset($this->table_data['columns']) && isset($this->table_data['schema'])) { //TODO: check if table_data['schema'] is actuallya a minimum requirement
+        if ($this->table_data && isset($this->table_data['columns']) && isset($this->table_data['schema'])) { //TODO: check if table_data['schema'] is actually a minimum requirement
+            //TODO: check if incorporate here
+            $this->table_name = \MADkit\Modules\Handler::get_default_table_name($this->name);
+
             //Schema
             $columns = var_export($this->table_data['columns'], true);
             eval("namespace $this->namespace;class Schema extends \BerlinDB\Database\Schema{protected \$columns=$columns;}");
@@ -87,6 +89,24 @@ class Module {
             if (file_exists($target)) {
                 include_once $target;
             }
+        }
+
+        \MADkit\Modules\Handler::$active_modules[$this->name]['is_loaded'] = true;
+    }
+
+    protected function init_module() {
+
+        if ($this->dependencies) {
+            foreach ($this->dependencies as $module) {
+                $item = \MADkit\Modules\Handler::maybe_load_module($module);
+                if ($item && !$item['is_loaded']) {
+                    $item['class']->load_module();
+                }
+            }
+        }
+
+        if ($this->autoload) {
+            $this->load_module();
         }
     }
 

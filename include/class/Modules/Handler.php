@@ -23,18 +23,26 @@ class Handler {
 
     public static $active_modules = array();
 
-    //put your code here
     public static function load_modules() {
-        $retval = array();
         foreach (scandir(MK_MODULES_PATH) as $key => $value) {
             if (!in_array($value, array(".", "..")) &&
-                    is_dir(MK_MODULES_PATH . "/" . $value) &&
-                    class_exists(MK_MODULES_NAMESPACE . $value)) {
-
-                $class = MK_MODULES_NAMESPACE . $value;
-                self::$active_modules[$value] = new \MADkit\Module\Timesheets;
-                ;
+                    is_dir(MK_MODULES_PATH . "/" . $value)) {
+                self::maybe_load_module($value);
             }
+        }
+    }
+
+    public static function maybe_load_module($value) {
+        if ((!isset(self::$active_modules[$value]) || !self::$active_modules[$value])) {
+            $class = MK_MODULES_NAMESPACE . $value;
+            self::$active_modules[$value]['class'] = new $class;
+            self::$active_modules[$value]['is_loaded'] = false;
+        }
+
+        if (class_exists(MK_MODULES_NAMESPACE . $value)) {
+            return self::$active_modules[$value];
+        } else {
+            return null;
         }
     }
 
@@ -57,4 +65,5 @@ class Handler {
             return MK_MODULES_PATH . DIRECTORY_SEPARATOR . $module_name;
         }
     }
+
 }
