@@ -1,0 +1,6 @@
+[submodule "modules/w3css/data"]
+	path = modules/w3css/data
+	url = https://github.com/spleen1981/w3css
+[submodule "modules/BerlinDB/data"]
+	path = modules/BerlinDB/data
+	url = https://github.com/spleen1981/berlindb_core
