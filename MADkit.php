@@ -65,7 +65,6 @@ $mk_plugin_url = plugin_dir_url(__FILE__);
  * @since 0.1.0
  */
 
-require_once( MK_PATH . '/assets/php/berlindb_core/autoloader.php' );
 require_once( MK_PATH . DIRECTORY_SEPARATOR.join(DIRECTORY_SEPARATOR,MK_CLASS_SUBPATH).'/Modules/autoloader.php' ); //TODO: merge in main autoloader
 require_once( MK_PATH . '/autoloader.php' );
 
