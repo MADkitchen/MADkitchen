@@ -1,4 +1,4 @@
-modules/
+modules/*
 !modules/BerlinDB
 !modules/w3css
 !modules/jQuery
