@@ -31,59 +31,72 @@ class Query extends \BerlinDB\Database\Query {
     protected $item_name = '';
     protected $item_name_plural = '';
     protected $item_shape = '';
-    private $math_functions = array();
+    private $aggregate_func_list = [
+        //COUNT(*) already covered in BerlinDB
+        'sum',
+        'min',
+        'max',
+        'average',
+        'groutp_concat',
+        'first',
+        'last',
+    ];
+    private $count_flag = false;
 
     public function __construct($query = array()) {
 
         $this->table_alias = substr(md5($this->table_name), 0, 3);
         $this->item_name = strtolower($this->table_name) . '_record';
         $this->item_name_plural = strtolower($this->table_name) . '_records';
-        $this->math_functions['sum'] = false;
 
-        /* BerlinDB does not have support for SUM, hence workaround using COUNT
-         * and final query request overwrite through provided hook is used.
-         * Number of SUM terms is stored in the property math_functions['sum'] and
-         * relevant columns are prepended in 'groupby' array.
-         * In hook callback SUM terms are retrieved from 'groupby' and removed, and
-         * used to build the SUM sentence to overwrite the COUNT one.
-         * After query is executed, math_functions['sum'] is set back to false for
-         * normal use
+        /* BerlinDB does not have support for aggregate functions except COUNT, hence workaround
+         * setting 'count' key=true and rewriting 'fields' key through provided hook is used.
          */
 
-        if (isset($query['sum'])) {
-            $this->math_functions['sum'] = count($query['sum']);
-            if (!isset($query['groupby']))
-                $query['groupby'] = array();
-            array_unshift($query['groupby'], implode(',', $query['sum']));
+        if (array_intersect_key($query, array_flip($this->aggregate_func_list))) {
+            if (isset($query['count'])) {
+                $this->count_flag = (bool) $query['count'];
+            }
             $query['count'] = true;
-            add_filter($this->item_name_plural . '_query_clauses', array($this, 'query_override'));
+            //Filter is added only if aggregate function is present in the query, it is used in parent class __construct and removed immediately afterwards
+            add_filter($this->item_name_plural . '_query_clauses', array($this, 'fields_override'));
         }
 
         $retval = parent::__construct($query);
 
-        if (isset($query['sum'])) {
-            remove_filter($this->item_name_plural . '_query_clauses', array($this, 'query_override'));
-            $this->math_functions['sum'] = false;
+        if (has_action($this->item_name_plural . '_query_clauses', array($this, 'fields_override')) !== false) {
+            remove_filter($this->item_name_plural . '_query_clauses', array($this, 'fields_override'));
         }
 
         return $retval;
     }
 
-    function query_override($args) {
-        if ($this->math_functions['sum']) {
-            $sum_columns = array();
-            $as_sentence = __('Total', 'time_beans');
-            $groupby = explode(',', $args['groupby']);
-
-            for ($i = 0; $i < $this->math_functions['sum']; $i++) {
-                $sum_columns[] = 'SUM(' . array_shift($groupby) . ')';
+    function fields_override($args) {
+        $items = [];
+        foreach (array_intersect_key($this->query_vars, array_flip($this->aggregate_func_list)) as $key=>$value) {
+            foreach (array_filter(array_map(array($this, 'parse_column_name'), $value)) as $item) {
+                $items[] = strtoupper($key) . '(' . $item . ') AS ' . strtolower($key) . '_' . str_replace("{$this->table_alias}.", '', $item);
             }
-
-            $sum_sentence = implode(',', $sum_columns) . ' AS ' . $as_sentence;
-            $args['groupby'] = implode(',', $groupby);
-            $group_sentence = $args['groupby'] ? $args['groupby'] . ',' : '';
-            $args['fields'] = $group_sentence . $sum_sentence;
         }
+
+        /* BerlinDB in-built 'COUNT' support is used to trig all other aggregate functions.
+         * If actual 'count' was not requested in original query, sentence is removed from 'fields'.
+         * Ref. parent::parse_fields()
+         */
+        $sentence = [
+            $this->count_flag ? $args['fields'] : $args['groupby'],
+            implode(', ', $items),
+        ];
+
+        $args['fields'] = implode(', ', array_filter($sentence));
+
         return $args;
     }
+
+    private function parse_column_name($data) {
+        $r = new \ReflectionMethod(parent::class, 'parse_groupby');
+        $r->setAccessible(true);
+        return $r->invoke($this, $data);
+    }
+
 }
