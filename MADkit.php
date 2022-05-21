@@ -27,7 +27,6 @@
  * Text Domain:       madkit
  * Domain Path:       /languages
  */
-
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -56,7 +55,6 @@ define("MK_OPTIONS_NAME", 'mk_options');
  *
  * @since 0.1.0
  */
-
 $mk_plugin_url = plugin_dir_url(__FILE__);
 
 /**
@@ -64,19 +62,26 @@ $mk_plugin_url = plugin_dir_url(__FILE__);
  *
  * @since 0.1.0
  */
-
-require_once( MK_PATH . DIRECTORY_SEPARATOR.join(DIRECTORY_SEPARATOR,MK_CLASS_SUBPATH).'/Modules/autoloader.php' ); //TODO: merge in main autoloader
+require_once( MK_PATH . DIRECTORY_SEPARATOR . join(DIRECTORY_SEPARATOR, MK_CLASS_SUBPATH) . '/Modules/autoloader.php' ); //TODO: merge in main autoloader
 require_once( MK_PATH . '/autoloader.php' );
 
 /**
- * Include Admin resources
+ * Register common scripts/files
  *
  * @since 0.1.0
  */
+wp_register_script('common_frontend_js', plugin_dir_url(__FILE__) . '/assets/js/frontend.js', array('jquery'));
 
+/**
+ * Include Admin/Frontend resources
+ *
+ * @since 0.1.0
+ */
 if (is_admin()) {
     //require_once( MK_PATH . '/include/admin/users.php' );
     //require_once( MK_PATH . '/include/admin/options.php' );
+} else {
+    wp_enqueue_script('common_frontend_js');
 }
 
 /**
@@ -84,6 +89,5 @@ if (is_admin()) {
  *
  * @since 0.1.0
  */
-
-$modules=MADkit\Modules\Handler::load_modules();
+$modules = MADkit\Modules\Handler::load_modules();
 
