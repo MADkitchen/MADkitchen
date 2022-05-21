@@ -40,6 +40,8 @@ class Page {
 
         add_filter('the_posts', array($this, 'inject_page'), 10, 2);
         add_action('wp_head', array($this, 'add_page_scripts'));
+        //TODO: check if load without any check if template exists
+        $this->add_page_functions();
     }
 
     private function create_page($page_item) {
@@ -148,12 +150,12 @@ class Page {
         return $posts;
     }
 
-    protected function add_page_content($page_item) {
+    private function add_page_content($page_item) {
 
         $template_file = join(DIRECTORY_SEPARATOR, array(\MADkit\Modules\Handler::get_module_path($this->module_name),
             'frontend',
-            'Templates',
-            str_replace('/', '_', $page_item['slug']) . '.php'
+            'templates',
+            $this->sanitize_slug($page_item['slug']) . '.php'
                 )
         );
         if (file_exists($template_file)) {
@@ -176,8 +178,8 @@ class Page {
             if (isset($wp_query->query['pagename']) && $item['slug'] == $wp_query->query['pagename']) {
                 $template_file = join(DIRECTORY_SEPARATOR, array(\MADkit\Modules\Handler::get_module_path($this->module_name),
                     'frontend',
-                    'Scripts',
-                    str_replace('/', '_', $item['slug']) . '.php'
+                    'inline_scripts',
+                    $this->sanitize_slug($item['slug']) . '.php'
                         )
                 );
                 if (file_exists($template_file)) {
@@ -185,6 +187,26 @@ class Page {
                 }
             }
         }
+    }
+
+    private function add_page_functions() {
+        foreach ($this->pages as $page_item) {
+            $template_file = join(DIRECTORY_SEPARATOR, array(\MADkit\Modules\Handler::get_module_path($this->module_name),
+                'frontend',
+                'functions',
+                $this->sanitize_slug($page_item['slug']) . '.php'
+                    )
+            );
+
+            if (file_exists($template_file)) {
+                include_once($template_file);
+            }
+        }
+    }
+
+    private function sanitize_slug($slug) {
+        //TODO: double check if this sanitization is sufficient
+        return str_replace('/', '_', $slug);
     }
 
 }
