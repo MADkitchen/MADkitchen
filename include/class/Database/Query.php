@@ -73,7 +73,7 @@ class Query extends \BerlinDB\Database\Query {
 
     function fields_override($args) {
         $items = [];
-        foreach (array_intersect_key($this->query_vars, array_flip($this->aggregate_func_list)) as $key=>$value) {
+        foreach (array_intersect_key($this->query_vars, array_flip($this->aggregate_func_list)) as $key => $value) {
             foreach (array_filter(array_map(array($this, 'parse_column_name'), $value)) as $item) {
                 $items[] = strtoupper($key) . '(' . $item . ') AS ' . strtolower($key) . '_' . str_replace("{$this->table_alias}.", '', $item);
             }
@@ -87,8 +87,14 @@ class Query extends \BerlinDB\Database\Query {
             $this->count_flag ? $args['fields'] : $args['groupby'],
             implode(', ', $items),
         ];
-
         $args['fields'] = implode(', ', array_filter($sentence));
+
+        /* BerlinDB casts results to int if not grouping counts. Adding space to 'groupby' if empty as a workaround.
+         * Ref. parent::get_items()
+         */
+        if (empty($this->query_vars['groupby'])) {
+            $this->query_vars['groupby'] = ' ';
+        }
 
         return $args;
     }
