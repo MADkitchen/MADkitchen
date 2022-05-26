@@ -66,4 +66,39 @@ class Handler {
         }
     }
 
+    public static function get_table_column_prop_array_by_key($class, $keys_in, $prop = 'name', $key_out_type = 'name', $get_val_from = array()) {
+        $retval = [];
+        foreach ($keys_in as $key) {
+            $prop_out = self::get_table_column_prop_by_key($class, $key, $prop);
+            $key_out = self::get_table_column_prop_by_key($class, $key, $key_out_type);
+
+            if ($prop_out === '' || $key_out === '') {
+                continue;
+            }
+
+            if ($get_val_from) {
+                if (isset($get_val_from[$prop_out])) {
+                    $retval[$key_out] = $get_val_from[$prop_out];
+                }
+            } else if ($key_out_type === false) {
+                $retval[] = $prop_out;
+            } else {
+                $retval[$key_out] = $prop_out;
+            }
+        }
+
+        return $retval;
+    }
+
+    public static function get_table_column_prop_by_key($class, $key, $prop) {
+        $retval = '';
+        if (isset(self::$active_modules[$class])) {
+            $table_data = self::$active_modules[$class]['class']->table_data;
+            if (isset($table_data['columns'][$key]) && isset($table_data['columns'][$key][$prop])) {
+                $retval = $table_data['columns'][$key][$prop];
+            }
+        }
+        return $retval;
+    }
+
 }
