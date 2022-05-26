@@ -29,6 +29,42 @@ class Module {
     protected $table_data = array();
     protected $pages_data = array();
 
+    public function __isset($key = '') {
+
+        // Class method to try and call
+        $method = "get_{$key}";
+
+        // Return property if exists
+        if (method_exists($this, $method)) {
+            return true;
+
+            // Return get method results if exists
+        } elseif (property_exists($this, $key)) {
+            return true;
+        }
+
+        // Return false if not exists
+        return false;
+    }
+
+    public function __get($key = '') {
+
+        // Class method to try and call
+        $method = "get_{$key}";
+
+        // Return property if exists
+        if (method_exists($this, $method)) {
+            return call_user_func(array($this, $method));
+
+            // Return get method results if exists
+        } elseif (property_exists($this, $key)) {
+            return $this->{$key};
+        }
+
+        // Return null if not exists
+        return null;
+    }
+
     public function __construct() {
 
         $this->namespace = get_class($this);
