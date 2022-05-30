@@ -2,3 +2,4 @@ modules/*
 !modules/BerlinDB
 !modules/w3css
 !modules/jQuery
+!modules/chartjs
