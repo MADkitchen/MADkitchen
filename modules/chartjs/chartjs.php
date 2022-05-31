@@ -20,8 +20,19 @@
 namespace MADkit\Module;
 
 // Exit if accessed directly
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 class chartjs extends \MADkit\Modules\Module {
+
+    public function load_module() {
+        parent::load_module();
+        if (!wp_script_is('chartjs', 'registered')) {
+            wp_register_script('chartjs', plugin_dir_url(__FILE__) . 'data/chart.min.js');
+        }
+
+        if (!wp_script_is('chartjs', 'enqueued')) {
+            wp_enqueue_script("chartjs");
+        }
+    }
 
 }

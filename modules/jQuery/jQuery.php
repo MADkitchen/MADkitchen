@@ -20,8 +20,15 @@
 namespace MADkit\Module;
 
 // Exit if accessed directly
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 class jQuery extends \MADkit\Modules\Module {
+
+    public function load_module() {
+        parent::load_module();
+        if (!wp_script_is('jquery', 'enqueued')) {
+            wp_enqueue_script("jquery");
+        }
+    }
 
 }
