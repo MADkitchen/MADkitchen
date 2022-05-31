@@ -100,7 +100,7 @@ class Module {
             eval("namespace $this->namespace;class Table extends \MADkit\Database\Table{public \$name=\"$this->table_name\";protected \$schema=\"$schema\";}");
 
             //Query
-            $table_schema = $this->namespace . '\\Schema';
+            $table_schema = addslashes($this->namespace) . '\\Schema';
             eval("namespace $this->namespace;class Query extends \MADkit\Database\Query{protected \$table_name=\"$this->table_name\";protected \$table_schema=\"$table_schema\";}");
 
             //Autoload Table class
