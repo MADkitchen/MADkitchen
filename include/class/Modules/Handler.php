@@ -35,8 +35,8 @@ class Handler {
     public static function maybe_load_module($value) {
         if ((!isset(self::$active_modules[$value]) || !self::$active_modules[$value])) {
             $class = MK_MODULES_NAMESPACE . $value;
-            self::$active_modules[$value]['class'] = new $class;
             self::$active_modules[$value]['is_loaded'] = false;
+            self::$active_modules[$value]['class'] = new $class;
         }
 
         if (class_exists(MK_MODULES_NAMESPACE . $value)) {
