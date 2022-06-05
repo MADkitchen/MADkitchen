@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace MADkit\Database;
+namespace MADkitchen\Database;
 
 if (!defined('ABSPATH')) {
     exit;

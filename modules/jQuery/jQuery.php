@@ -17,12 +17,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace MADkit\Module;
+namespace MADkitchen\Module;
 
 // Exit if accessed directly
 defined('ABSPATH') || exit;
 
-class jQuery extends \MADkit\Modules\Module {
+class jQuery extends \MADkitchen\Modules\Module {
 
     public function load_module() {
         parent::load_module();

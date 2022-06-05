@@ -18,13 +18,13 @@
  */
 
 /**
- * Plugin Name:       MADkit
- * Plugin URI:        https://github.com/spleen1981/MADkit/
+ * Plugin Name:       MADkitchen
+ * Plugin URI:        https://github.com/spleen1981/MADkitchen/
  * Description:       A Modular App Development kit for WordPress
  * Version:           0.1.0
  * Author:            Giovanni Cascione
  * Author URI:        https://github.com/spleen1981/
- * Text Domain:       madkit
+ * Text Domain:       MADkitchen
  * Domain Path:       /languages
  */
 if (!defined('ABSPATH')) {
@@ -37,17 +37,17 @@ if (!defined('ABSPATH')) {
  * @since 0.1.0
  */
 define("MK_PATH", __DIR__);
-define("MK_NAME", 'MADkit');
+define("MK_NAME", 'MADkitchen');
 define("MK_VERSION", '0.1.0');
 
 define("MK_CLASS_SUBPATH", array('include', 'class'));
 define("MK_MODULES_PATH", MK_PATH . DIRECTORY_SEPARATOR . 'modules');
 define("MK_MODULES_CLASS_SUBPATH", array('class'));
-define("MK_MODULES_NAMESPACE", 'MADkit\\Module\\');
+define("MK_MODULES_NAMESPACE", 'MADkitchen\\Module\\');
 define("MK_TABLES_PREFIX", 'mk_');
 
 define("MK_OPTIONS_PREFIX", '_mk_');
-define('MK_OPTIONS_PAGE_BASENAME', 'MADkit-settings');
+define('MK_OPTIONS_PAGE_BASENAME', 'MADkitchen-settings');
 define("MK_OPTIONS_NAME", 'mk_options');
 
 /**
@@ -89,5 +89,5 @@ if (is_admin()) {
  *
  * @since 0.1.0
  */
-$modules = MADkit\Modules\Handler::load_modules();
+$modules = MADkitchen\Modules\Handler::load_modules();
 

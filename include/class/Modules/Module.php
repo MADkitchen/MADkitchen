@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace MADkit\Modules;
+namespace MADkitchen\Modules;
 
 class Module {
 
@@ -69,7 +69,7 @@ class Module {
 
         $this->namespace = get_class($this);
         //TODO: check if incorporate here
-        $this->name = \MADkit\Modules\Handler::get_module_name($this->namespace);
+        $this->name = \MADkitchen\Modules\Handler::get_module_name($this->namespace);
 
         $this->init_module();
     }
@@ -92,7 +92,7 @@ class Module {
             foreach ($this->table_data as $key => $table) {
                 if (isset($table['columns']) && isset($table['schema'])) { //TODO: check if table_data['schema'] is actually a minimum requirement
                     //TODO: check if incorporate here
-                    $this->table_name = \MADkit\Modules\Handler::get_default_table_name($this->name) . "_$key";
+                    $this->table_name = \MADkitchen\Modules\Handler::get_default_table_name($this->name) . "_$key";
                     $namespace = $this->namespace . "_$key";
 
                     //Schema
@@ -101,11 +101,11 @@ class Module {
 
                     //Table
                     $schema = addslashes($this->table_data['schema']);
-                    eval("namespace $namespace;class Table extends \MADkit\Database\Table{public \$name=\"$this->table_name\";protected \$schema=\"$schema\";}");
+                    eval("namespace $namespace;class Table extends \MADkitchen\Database\Table{public \$name=\"$this->table_name\";protected \$schema=\"$schema\";}");
 
                     //Query
                     $table_schema = addslashes($namespace) . '\\Schema';
-                    eval("namespace $namespace;class Query extends \MADkit\Database\Query{protected \$table_name=\"$this->table_name\";protected \$table_schema=\"$table_schema\";}");
+                    eval("namespace $namespace;class Query extends \MADkitchen\Database\Query{protected \$table_name=\"$this->table_name\";protected \$table_schema=\"$table_schema\";}");
 
                     //Autoload Table class
                     $class = "$namespace\\Table";
@@ -117,7 +117,7 @@ class Module {
         //Custom pages support
         if ($this->pages_data) {
             $pages = var_export($this->pages_data, true);
-            eval("namespace $this->namespace;class Page extends \MADkit\Frontend\Page{protected \$module_name=\"$this->name\";protected \$pages=$pages;}");
+            eval("namespace $this->namespace;class Page extends \MADkitchen\Frontend\Page{protected \$module_name=\"$this->name\";protected \$pages=$pages;}");
 
             //Autoload Page class
             $class = "$this->namespace\\Page";
@@ -133,14 +133,14 @@ class Module {
             }
         }
 
-        \MADkit\Modules\Handler::$active_modules[$this->name]['is_loaded'] = true;
+        \MADkitchen\Modules\Handler::$active_modules[$this->name]['is_loaded'] = true;
     }
 
     protected function init_module() {
 
         if ($this->dependencies) {
             foreach ($this->dependencies as $module) {
-                $item = \MADkit\Modules\Handler::maybe_load_module($module);
+                $item = \MADkitchen\Modules\Handler::maybe_load_module($module);
                 if ($item && !$item['is_loaded']) {
                     $item['class']->load_module();
                 }

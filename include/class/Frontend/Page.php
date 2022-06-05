@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-namespace MADkit\Frontend;
+namespace MADkitchen\Frontend;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -152,7 +152,7 @@ class Page {
 
     private function add_page_content($page_item) {
 
-        $template_file = join(DIRECTORY_SEPARATOR, array(\MADkit\Modules\Handler::get_module_path($this->module_name),
+        $template_file = join(DIRECTORY_SEPARATOR, array(\MADkitchen\Modules\Handler::get_module_path($this->module_name),
             'frontend',
             'templates',
             $this->sanitize_slug($page_item['slug']) . '.php'
@@ -164,7 +164,7 @@ class Page {
             $retval = ob_get_contents();
             ob_end_clean();
         } else {
-            $retval = __('Content not found', 'madkit');
+            $retval = __('Content not found', 'MADkitchen');
         }
 
         return $retval;
@@ -176,7 +176,7 @@ class Page {
 
         foreach ($this->pages as $item) {
             if (isset($wp_query->query['pagename']) && $item['slug'] == $wp_query->query['pagename']) {
-                $template_file = join(DIRECTORY_SEPARATOR, array(\MADkit\Modules\Handler::get_module_path($this->module_name),
+                $template_file = join(DIRECTORY_SEPARATOR, array(\MADkitchen\Modules\Handler::get_module_path($this->module_name),
                     'frontend',
                     'inline_scripts',
                     $this->sanitize_slug($item['slug']) . '.php'
@@ -191,7 +191,7 @@ class Page {
 
     private function add_page_functions() {
         foreach ($this->pages as $page_item) {
-            $template_file = join(DIRECTORY_SEPARATOR, array(\MADkit\Modules\Handler::get_module_path($this->module_name),
+            $template_file = join(DIRECTORY_SEPARATOR, array(\MADkitchen\Modules\Handler::get_module_path($this->module_name),
                 'frontend',
                 'functions',
                 $this->sanitize_slug($page_item['slug']) . '.php'

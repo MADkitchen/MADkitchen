@@ -31,7 +31,7 @@ spl_autoload_register(
 	static function ( $class_name = '' ) {
 
 		// Project namespace & length.
-		$project_namespace = 'MADkit\\';
+		$project_namespace = 'MADkitchen\\';
 		$length            = strlen( $project_namespace );
 
 		// Bail if class is not in this namespace.
