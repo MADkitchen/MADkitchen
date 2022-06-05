@@ -33,17 +33,19 @@ class Handler {
     }
 
     public static function maybe_load_module($value) {
+        $retval = null;
         if ((!isset(self::$active_modules[$value]) || !self::$active_modules[$value])) {
             $class = MK_MODULES_NAMESPACE . $value;
-            self::$active_modules[$value]['is_loaded'] = false;
-            self::$active_modules[$value]['class'] = new $class;
-        }
 
-        if (class_exists(MK_MODULES_NAMESPACE . $value)) {
-            return self::$active_modules[$value];
+            if (class_exists($class, true)) { //CHECK autoloader impact
+                self::$active_modules[$value]['is_loaded'] = false;
+                self::$active_modules[$value]['class'] = new $class;
+                $retval = self::$active_modules[$value];
+            }
         } else {
-            return null;
+            $retval = self::$active_modules[$value];
         }
+        return $retval;
     }
 
     public static function get_default_table_name($module_name) {
