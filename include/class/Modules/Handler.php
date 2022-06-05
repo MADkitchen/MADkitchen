@@ -68,6 +68,49 @@ class Handler {
         }
     }
 
+    public static function resolve_internal_relation($class, $table, $id, $column, $target = null) {
+        $retval = $id;
+        $target = is_null($target) ?: $column;
+
+        $table_data = self::get_table($class, $table);
+        $primary_key = get_primary_key($class, $table);
+
+        if (isset($table_data['columns'][$column]['relation']) && key_exists($primary_key, $table_data)) {
+            $new_table = $table_data['columns'][$column]['relation'];
+            $found = self::$active_modules[$class]['class']->query($new_table, array(
+                        $primary_key => $id
+                            )
+                    )->items;
+            if (isset($found[0][$target])) {
+                $retval = self::resolve_internal_relation($class, $new_table, $found[0][$target], $target);
+            }
+        }
+
+        return $retval;
+    }
+
+    public static function get_primary_key($class, $table) {
+        $retval = null;
+        $table_data = self::get_table($class, $table);
+
+        foreach ($table_data as $key => $column) {
+
+            if (get_table_column_prop_by_key($class, $table, $key, 'primary') === true) {
+                $retval = $key;
+            }
+        }
+
+        return $retval;
+    }
+
+    public static function get_table($class, $table) {
+        $retval = [];
+        if (isset(self::$active_modules[$class]['class']->table_data[$table])) {
+            $retval = self::$active_modules[$class]['class']->table_data[$table];
+        }
+        return $retval;
+    }
+
     public static function get_table_column_prop_array_by_key($class, $table, $keys_in, $prop = 'name', $key_out_type = 'name', $get_val_from = array()) {
         $retval = [];
         foreach ($keys_in as $key) {
@@ -93,13 +136,12 @@ class Handler {
     }
 
     public static function get_table_column_prop_by_key($class, $table, $key, $prop) {
-        $retval = '';
-        if (isset(self::$active_modules[$class]['class']->table_data[$table])) {
-            $table_data = self::$active_modules[$class]['class']->table_data[$table];
-            if (isset($table_data['columns'][$key]) && isset($table_data['columns'][$key][$prop])) {
-                $retval = $table_data['columns'][$key][$prop];
-            }
+        $retval = null;
+        $table_data = self::get_table($class, $table);
+        if (isset($table_data['columns'][$key]) && isset($table_data['columns'][$key][$prop])) {
+            $retval = $table_data['columns'][$key][$prop];
         }
+
         return $retval;
     }
 
