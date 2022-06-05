@@ -68,11 +68,11 @@ class Handler {
         }
     }
 
-    public static function get_table_column_prop_array_by_key($class, $keys_in, $prop = 'name', $key_out_type = 'name', $get_val_from = array()) {
+    public static function get_table_column_prop_array_by_key($class, $table, $keys_in, $prop = 'name', $key_out_type = 'name', $get_val_from = array()) {
         $retval = [];
         foreach ($keys_in as $key) {
-            $prop_out = self::get_table_column_prop_by_key($class, $key, $prop);
-            $key_out = self::get_table_column_prop_by_key($class, $key, $key_out_type);
+            $prop_out = self::get_table_column_prop_by_key($class, $table, $key, $prop);
+            $key_out = self::get_table_column_prop_by_key($class, $table, $key, $key_out_type);
 
             if ($prop_out === '' || $key_out === '') {
                 continue;
@@ -92,10 +92,10 @@ class Handler {
         return $retval;
     }
 
-    public static function get_table_column_prop_by_key($class, $key, $prop) {
+    public static function get_table_column_prop_by_key($class, $table, $key, $prop) {
         $retval = '';
-        if (isset(self::$active_modules[$class])) {
-            $table_data = self::$active_modules[$class]['class']->table_data;
+        if (isset(self::$active_modules[$class]['class']->table_data[$table])) {
+            $table_data = self::$active_modules[$class]['class']->table_data[$table];
             if (isset($table_data['columns'][$key]) && isset($table_data['columns'][$key][$prop])) {
                 $retval = $table_data['columns'][$key][$prop];
             }

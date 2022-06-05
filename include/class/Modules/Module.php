@@ -74,38 +74,44 @@ class Module {
         $this->init_module();
     }
 
-    public function query($query = array()) {
-        $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\Query";
+    public function query($table = '0', $query = array()) {
+        $class = "\\" . MK_MODULES_NAMESPACE . "$this->name_$table\\Query";
+
         return new $class($query);
     }
 
-    protected function table() {
-        $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\Table";
+    protected function table($table = '0') {
+        $class = "\\" . MK_MODULES_NAMESPACE . "$this->name_$table\\Table";
         return new $class();
     }
 
     public function load_module() {
         //TODO: check tests
         //Database support
-        if ($this->table_data && isset($this->table_data['columns']) && isset($this->table_data['schema'])) { //TODO: check if table_data['schema'] is actually a minimum requirement
-            //TODO: check if incorporate here
-            $this->table_name = \MADkit\Modules\Handler::get_default_table_name($this->name);
+        if ($this->table_data && is_array($this->table_data)) {
+            foreach ($this->table_data as $key => $table) {
+                if (isset($table['columns']) && isset($table['schema'])) { //TODO: check if table_data['schema'] is actually a minimum requirement
+                    //TODO: check if incorporate here
+                    $this->table_name = \MADkit\Modules\Handler::get_default_table_name($this->name) . "_$key";
+                    $namespace = $this->namespace . "_$key";
 
-            //Schema
-            $columns = var_export($this->table_data['columns'], true);
-            eval("namespace $this->namespace;class Schema extends \BerlinDB\Database\Schema{protected \$columns=$columns;}");
+                    //Schema
+                    $columns = var_export($this->table_data['columns'], true);
+                    eval("namespace $namespace;class Schema extends \BerlinDB\Database\Schema{protected \$columns=$columns;}");
 
-            //Table
-            $schema = addslashes($this->table_data['schema']);
-            eval("namespace $this->namespace;class Table extends \MADkit\Database\Table{public \$name=\"$this->table_name\";protected \$schema=\"$schema\";}");
+                    //Table
+                    $schema = addslashes($this->table_data['schema']);
+                    eval("namespace $namespace;class Table extends \MADkit\Database\Table{public \$name=\"$this->table_name\";protected \$schema=\"$schema\";}");
 
-            //Query
-            $table_schema = addslashes($this->namespace) . '\\Schema';
-            eval("namespace $this->namespace;class Query extends \MADkit\Database\Query{protected \$table_name=\"$this->table_name\";protected \$table_schema=\"$table_schema\";}");
+                    //Query
+                    $table_schema = addslashes($namespace) . '\\Schema';
+                    eval("namespace $namespace;class Query extends \MADkit\Database\Query{protected \$table_name=\"$this->table_name\";protected \$table_schema=\"$table_schema\";}");
 
-            //Autoload Table class
-            $class = "$this->namespace\\Table";
-            new $class;
+                    //Autoload Table class
+                    $class = "$namespace\\Table";
+                    new $class;
+                }
+            }
         }
 
         //Custom pages support
