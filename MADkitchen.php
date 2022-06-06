@@ -19,11 +19,11 @@
 
 /**
  * Plugin Name:       MADkitchen
- * Plugin URI:        https://github.com/spleen1981/MADkitchen/
+ * Plugin URI:        https://github.com/MADkitchen/MADkitchen/
  * Description:       A Modular App Development kit for WordPress
  * Version:           0.1.0
- * Author:            Giovanni Cascione
- * Author URI:        https://github.com/spleen1981/
+ * Author:            MADkitchen
+ * Author URI:        https://github.com/MADkitchen/
  * Text Domain:       MADkitchen
  * Domain Path:       /languages
  */
