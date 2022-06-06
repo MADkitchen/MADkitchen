@@ -24,7 +24,6 @@ class Module {
     protected $dependencies = array();
     protected $autoload = false;
     protected $name = '';
-    protected $table_name = '';
     protected $namespace = '';
     protected $table_data = array();
     protected $pages_data = array();
@@ -92,20 +91,20 @@ class Module {
             foreach ($this->table_data as $key => $table) {
                 if (isset($table['columns']) && isset($table['schema'])) { //TODO: check if table_data['schema'] is actually a minimum requirement
                     //TODO: check if incorporate here
-                    $this->table_name = \MADkitchen\Modules\Handler::get_default_table_name($this->name) . "_$key";
+                    $table_name = \MADkitchen\Modules\Handler::get_default_table_name($this->name) . "_$key";
                     $namespace = $this->namespace . "_$key";
 
                     //Schema
-                    $columns = var_export($this->table_data['columns'], true);
+                    $columns = var_export($table['columns'], true);
                     eval("namespace $namespace;class Schema extends \BerlinDB\Database\Schema{protected \$columns=$columns;}");
 
                     //Table
-                    $schema = addslashes($this->table_data['schema']);
-                    eval("namespace $namespace;class Table extends \MADkitchen\Database\Table{public \$name=\"$this->table_name\";protected \$schema=\"$schema\";}");
+                    $schema = addslashes($table['schema']);
+                    eval("namespace $namespace;class Table extends \MADkitchen\Database\Table{public \$name=\"$table_name\";protected \$schema=\"$schema\";}");
 
                     //Query
                     $table_schema = addslashes($namespace) . '\\Schema';
-                    eval("namespace $namespace;class Query extends \MADkitchen\Database\Query{protected \$table_name=\"$this->table_name\";protected \$table_schema=\"$table_schema\";}");
+                    eval("namespace $namespace;class Query extends \MADkitchen\Database\Query{protected \$table_name=\"$table_name\";protected \$table_schema=\"$table_schema\";}");
 
                     //Autoload Table class
                     $class = "$namespace\\Table";
