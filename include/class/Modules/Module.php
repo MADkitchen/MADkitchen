@@ -74,13 +74,13 @@ class Module {
     }
 
     public function query($table = '0', $query = array()) {
-        $class = "\\" . MK_MODULES_NAMESPACE . "$this->name_$table\\Query";
+        $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\$table\\Query";
 
         return new $class($query);
     }
 
     protected function table($table = '0') {
-        $class = "\\" . MK_MODULES_NAMESPACE . "$this->name_$table\\Table";
+        $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\$table\\Table";
         return new $class();
     }
 
@@ -92,7 +92,7 @@ class Module {
                 if (isset($table['columns']) && isset($table['schema'])) { //TODO: check if table_data['schema'] is actually a minimum requirement
                     //TODO: check if incorporate here
                     $table_name = \MADkitchen\Modules\Handler::get_default_table_name($this->name) . "_$key";
-                    $namespace = $this->namespace . "_$key";
+                    $namespace = $this->namespace . "\\$key";
 
                     //Schema
                     $columns = var_export($table['columns'], true);
