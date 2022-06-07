@@ -68,23 +68,32 @@ class Handler {
         }
     }
 
-    public static function resolve_internal_relation($class, $table, $id, $column, $target = null) {
-        $retval = $id;
-        $target = is_null($target) ?: $column;
+    public static function resolve_internal_relation($class, $table_source, $column_source, $id_source, $column_target = null) {
+        $retval = $id_source;
+        $column_target = is_null($column_target) ? $column_source : $column_target;
 
-        $table_data = self::get_table($class, $table);
-        $primary_key = get_primary_key($class, $table);
+        $table_source_data = self::get_table($class, $table_source);
 
-        if (isset($table_data['columns'][$column]['relation']) && key_exists($primary_key, $table_data)) {
-            $new_table = $table_data['columns'][$column]['relation'];
-            $found = self::$active_modules[$class]['class']->query($new_table, array(
-                        $primary_key => $id
-                            )
-                    )->items;
-            if (isset($found[0][$target])) {
-                $retval = self::resolve_internal_relation($class, $new_table, $found[0][$target], $target);
+        $table_target = null;
+        if (isset($table_source_data['columns'][$column_source]['relation'])) {
+            $table_target = $table_source_data['columns'][$column_source]['relation'];
+            //$table_target_data = self::get_table($class, $table_target);
+            $primary_key = self::get_primary_key($class, $table_target);
+
+            if (!is_null($primary_key)) {
+                $found = self::$active_modules[$class]['class']->query($table_target, [
+                            $primary_key => $id_source,
+                            'groupby' => [$column_target],
+                                ]
+                        )->items;
+                if (isset($found[0]->$column_target)) {
+                    $retval = self::resolve_internal_relation($class, $table_target, $column_target, $found[0]->$column_target);
+                }
             }
         }
+
+
+
 
         return $retval;
     }
@@ -93,10 +102,11 @@ class Handler {
         $retval = null;
         $table_data = self::get_table($class, $table);
 
-        foreach ($table_data as $key => $column) {
+        foreach ($table_data['columns'] as $key => $column) {
 
-            if (get_table_column_prop_by_key($class, $table, $key, 'primary') === true) {
+            if (self::get_table_column_prop_by_key($class, $table, $key, 'primary') === true) {
                 $retval = $key;
+                break;
             }
         }
 
