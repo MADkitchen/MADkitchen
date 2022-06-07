@@ -45,7 +45,7 @@ class Query extends \BerlinDB\Database\Query {
 
     public function __construct($query = array()) {
 
-        $this->table_alias = substr(md5($this->table_name), 0, 3);
+        $this->table_alias = 'mk'.substr(md5($this->table_name), 0, 3);
         $this->item_name = strtolower($this->table_name) . '_record';
         $this->item_name_plural = strtolower($this->table_name) . '_records';
 
