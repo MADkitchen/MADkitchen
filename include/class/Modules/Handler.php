@@ -149,8 +149,89 @@ class Handler {
         $retval = null;
         $table_data = self::get_table($class, $table);
         if (isset($table_data['columns'][$key]) && isset($table_data['columns'][$key][$prop])) {
-            $retval = $table_data['columns'][$key][$prop];
+                $retval = $table_data['columns'][$key][$prop];
+            }
+
+        return $retval;
+    }
+
+    public static function sanitize_key($key) {
+        if (is_scalar($key)) {
+            return preg_replace('/[^a-z0-9_\-]/', '', strtolower($key));
+        } else {
+            return null;
         }
+    }
+
+    public static function get_std_lookup_table($tag, $desc, $external_keys = []) {
+        $retval = [];
+        $external_keys_schema = [];
+        $external_keys_columns = [];
+
+        $tag = self::sanitize_key($tag);
+
+        if (is_array($external_keys)) {
+            foreach ($external_keys as $item) {
+                if (!empty($item['tag'])) {
+                    $item['relation'] = $item['relation'] ?? $item['tag'];
+                    $external_keys_schema[] = "{$item['tag']} bigint(20) NOT NULL";
+                    $external_keys_columns[
+                            $item['tag']] = [
+                        'type' => 'bigint',
+                        'length' => '20',
+                        'unsigned' => true,
+                        'relation' => $item['relation'],
+                    ];
+                }
+            }
+        }
+
+        if (!empty($tag)) {
+            $retval = [
+                $tag => [
+                    'schema' => join(",\n", array_merge(
+                                    [
+                                        "id  bigint(20) NOT NULL AUTO_INCREMENT",
+                                        "PRIMARY KEY (id)",
+                                        "$tag tinytext NOT NULL",
+                                        "{$tag}_name tinytext NOT NULL",
+                                        "{$tag}_desc text NOT NULL"
+                                    ],
+                                    $external_keys_schema))
+                    ,
+                    'columns' => array_merge(
+                            [
+                                $tag => [
+                                    'name' => $tag,
+                                    'description' => $desc,
+                                    'type' => 'tinytext',
+                                    'unsigned' => true,
+                                    'searchable' => true,
+                                    'sortable' => true,
+                                ],
+                                "{$tag}_name" => [
+                                    'name' => "{$tag}_name",
+                                    'description' => "Name of $tag item",
+                                    'type' => 'tinytext',
+                                    'unsigned' => true,
+                                    'searchable' => true,
+                                    'sortable' => true,
+                                ],
+                                //job_tag
+                                "{$tag}_desc" => [
+                                    'name' => "{$tag}_desc",
+                                    'description' => "Description of $tag item",
+                                    'type' => 'text',
+                                    'unsigned' => true,
+                                    'searchable' => true,
+                                    'sortable' => true,
+                                ],
+                            ],
+                            $external_keys_columns),
+                ],
+            ];
+        }
+
 
         return $retval;
     }
