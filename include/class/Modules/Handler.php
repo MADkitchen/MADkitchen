@@ -149,8 +149,21 @@ class Handler {
         $retval = null;
         $table_data = self::get_table($class, $table);
         if (isset($table_data['columns'][$key]) && isset($table_data['columns'][$key][$prop])) {
+            if (empty($table_data['columns'][$key]['relation'])) {
                 $retval = $table_data['columns'][$key][$prop];
+            } else { //If it's external key search in that table
+                $retval = self::get_table_column_prop_by_key($class, $table_data['columns'][$key]['relation'], $key, $prop);
             }
+        } else { //If nothing is found try the other tables from that class to find original column
+            foreach (self::$active_modules[$class]['class']->table_data as $key_tab => $value_tab) {
+                if (key_exists($key, $value_tab['columns']) &&
+                        isset($value_tab['columns'][$key_tab][$prop]) &&
+                        (!isset($value_tab['columns'][$key_tab]['relation']) || !$value_tab['columns'][$key_tab]['relation'])) {
+                    $retval = $value_tab['columns'][$key_tab][$prop];
+                    break;
+                }
+            }
+        }
 
         return $retval;
     }
