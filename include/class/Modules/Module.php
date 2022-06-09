@@ -91,7 +91,7 @@ class Module {
             foreach ($this->table_data as $key => $table) {
                 if (isset($table['columns']) && isset($table['schema'])) { //TODO: check if table_data['schema'] is actually a minimum requirement
                     //TODO: check if incorporate here
-                    $table_name = \MADkitchen\Modules\Handler::get_default_table_name($this->name) . "_$key";
+                    $table_name = \MADkitchen\Database\Handler::get_default_table_name($this->name) . "_$key";
                     $namespace = $this->namespace . "\\$key";
 
                     //Schema
