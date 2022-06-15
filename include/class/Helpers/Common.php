@@ -24,11 +24,24 @@ if (!defined('ABSPATH')) {
 }
 
 class Common {
+
     public static function sanitize_key($key) {
         if (is_scalar($key)) {
             return preg_replace('/[^a-z0-9_\-]/', '', strtolower($key));
         } else {
             return null;
+        }
+    }
+
+    public static function ksort_by_array($array, $sort_list) {
+        $array_bkp = $array;
+        $sort_list=array_values($sort_list);
+        if (uksort($array_bkp, function ($a, $b) use ($sort_list) {
+                    return array_search($a, $sort_list) - array_search($b, $sort_list);
+                }) === true) {
+            return $array_bkp;
+        } else {
+            return $array;
         }
     }
 
