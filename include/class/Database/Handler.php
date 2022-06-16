@@ -110,6 +110,7 @@ class Handler {
         if (!empty($tag)) {
             $retval = [
                 $tag => [
+                    'lookup_table' => true,
                     'schema' => join(",\n", array_merge(
                                     [
                                         "id  bigint(20) NOT NULL AUTO_INCREMENT",
@@ -178,6 +179,7 @@ class Handler {
 
     //TODO: check names function/vars...
     //TODO: check synergy with get_table_column_prop_by_key
+    //TODO check if it can be simplified with is_lookup_table
     public static function get_lookup_columns($class, $column, $this_table) {
         $retval = [];
         $this_table_data = self::get_tables_data($class, $this_table);
@@ -217,4 +219,5 @@ class Handler {
 
         return $retval;
     }
+
 }
