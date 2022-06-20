@@ -1,0 +1,29 @@
+/*
+ * Copyright (C) 2022 Giovanni Cascione <ing.cascione@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/* if the screen is wider than 500px set the font size to 80px */
+@media screen and (min-width: 768px) {
+  .mk-tiny{font-size:10px!important}.mk-small{font-size:12px!important}.mk-medium{font-size:15px!important}.mk-large{font-size:18px!important}
+  .mk-xlarge{font-size:24px!important}.mk-xxlarge{font-size:36px!important}.mk-xxxlarge{font-size:48px!important}.mk-jumbo{font-size:64px!important}
+}
+/*if the screen size is less than 499px set the font size to 80px */
+@media screen and (max-width: 767px) {
+  .mk-tiny{font-size:4px!important}.mk-small{font-size:6px!important}.mk-medium{font-size:8px!important}.mk-large{font-size:10px!important}
+  .mk-xlarge{font-size:12px!important}.mk-xxlarge{font-size:18px!important}.mk-xxxlarge{font-size:24px!important}.mk-jumbo{font-size:32px!important}
+}
+
+.mk-cell{vertical-align: middle!important;padding:0!important; text-align: center!important}
