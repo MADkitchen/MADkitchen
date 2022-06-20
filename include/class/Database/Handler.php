@@ -94,14 +94,12 @@ class Handler {
                 if (!empty($item['tag'])) {
                     $item['relation'] = $item['relation'] ?? $item['tag'];
                     $external_keys_schema[] = "{$item['tag']} bigint(20) NOT NULL";
-                    $external_keys_columns = [
-                        $item['tag'] => [
-                            'name' => $item['tag'],
-                            'type' => 'bigint',
-                            'length' => '20',
-                            'unsigned' => true,
-                            'relation' => $item['relation'],
-                        ],
+                    $external_keys_columns[$item['tag']] = [
+                        'name' => $item['tag'],
+                        'type' => 'bigint',
+                        'length' => '20',
+                        'unsigned' => true,
+                        'relation' => $item['relation'],
                     ];
                 }
             }
