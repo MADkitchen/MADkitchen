@@ -26,3 +26,17 @@ jQuery(document).ready(function ($) {
         return pattern.test($(el).text());
     });
 });
+
+function one_word_find(src = '', item_sel = '', grp_swc_sel = '', grp_blk_sel = '') {
+
+    if (src !== '') {
+        jQuery(grp_swc_sel).hide();
+        jQuery(grp_blk_sel).show();
+        jQuery('[id$="item"]').hide();
+        jQuery(item_sel + ":icontains(" + src + ")").show();
+    } else {
+        jQuery(grp_swc_sel).show();
+        jQuery(grp_blk_sel).hide();
+        jQuery(item_sel).show();
+}
+}
