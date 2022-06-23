@@ -40,3 +40,14 @@ function one_word_find(src = '', item_sel = '', grp_swc_sel = '', grp_blk_sel = 
         jQuery(item_sel).show();
 }
 }
+
+const randomNum = () => Math.floor(Math.random() * (231+1-52)+52);
+const randomRGB = () => `rgb(${randomNum()}, ${randomNum()}, ${randomNum()})`;
+
+function get_random_rgb(count) {
+    const data = [];
+    for (i = 0; i < count; i++) {
+        data.push(randomRGB());
+    }
+    return data;
+}
