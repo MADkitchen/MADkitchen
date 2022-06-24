@@ -41,7 +41,7 @@ function one_word_find(src = '', item_sel = '', grp_swc_sel = '', grp_blk_sel = 
 }
 }
 
-const randomNum = () => Math.floor(Math.random() * (231+1-52)+52);
+const randomNum = () => Math.floor(Math.random() * (231 + 1 - 52) + 52);
 const randomRGB = () => `rgb(${randomNum()}, ${randomNum()}, ${randomNum()})`;
 
 function get_random_rgb(count) {
@@ -50,4 +50,12 @@ function get_random_rgb(count) {
         data.push(randomRGB());
     }
     return data;
+}
+
+function mk_get_spinner(extra_classes = '') {
+    return '<div class="w3-center w3-spin ' + extra_classes + '">&ring;</div>';
+}
+
+function mk_round(num, places = 0) {
+    return +(Math.round(num + "e+" + places) + "e-" + places);
 }
