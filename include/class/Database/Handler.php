@@ -25,6 +25,8 @@ if (!defined('ABSPATH')) {
 
 class Handler {
 
+    public static $lookup_tables = array();
+
     public static function get_default_table_name($module_name) {
         return MK_TABLES_PREFIX . strtolower($module_name) . '_table';
     }
@@ -51,6 +53,40 @@ class Handler {
 
     public static function is_column_external($class, $table, $column) {
         return self::get_tables_data($class, $table)['columns'][$column]['relation'] ?? false;
+    }
+
+    public static function is_lookup_table($class, $table) {
+        return empty(self::get_tables_data($class, $table)['lookup_table']) ? false : true;
+    }
+
+    public static function maybe_get_lookup_table($class, $table) {
+        $retval = null;
+        if (self::is_lookup_table($class, $table)) {
+            if (!isset(self::$lookup_tables[$table])) {
+                self::$lookup_tables[$table] = \MADkitchen\Modules\Handler::$active_modules[$class]['class']->query($table, [
+                            'groupby' => ['id'], //TODO: generalize 'id'
+                            'order' => 'ASC',
+                            ''
+                                ] //TODO: check default LIMIT
+                        )->items;
+            }
+
+            $retval = self::$lookup_tables[$table];
+        }
+        return $retval;
+    }
+
+    public static function get_row_from_lookup_table($class, $table, $key_src, $column_src = 'id') { //TODO: generalize 'id'
+        $retval = null;
+        if (!empty($table_data = self::maybe_get_lookup_table($class, $table))) {
+            foreach ($table_data as $row) {
+                if ($row->$column_src == $key_src) {
+                    $retval = $row;
+                    break;
+                }
+            }
+        }
+        return $retval;
     }
 
     //TODO: simplify and separate external array filter function

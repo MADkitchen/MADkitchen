@@ -117,13 +117,8 @@ class Entry {
         $primary_key = \MADkitchen\Database\Handler::get_primary_key($this->class, $this->table);
 
         if (!empty($primary_key)) {
-            $found_row = \MADkitchen\Modules\Handler::$active_modules[$this->class]['class']->query($this->table, [
-                        $primary_key => $key, //get entire row instead?
-                            //'groupby' => [$column_target],
-                            ]
-                    )->items;
-            $this->row = reset($found_row) ?? null;
-            $this->value = reset($found_row)->{$this->column} ?? null;
+            $this->row = $this->retrieve_row($primary_key, $key) ?? null;
+            $this->value = $this->row->{$this->column} ?? null;
         }
 
         return empty($this->value) ? null : $key;
@@ -131,15 +126,22 @@ class Entry {
 
     private function set_key_by_column_value($value) {
 
-        $found_row = \MADkitchen\Modules\Handler::$active_modules[$this->class]['class']->query($this->table, [
-                    $this->column => $value, //get entire row instead?
-                        //'groupby' => [$column_target],
-                        ]
-                )->items;
-        $this->row = reset($found_row) ?? null;
-        $this->key = reset($found_row)->{\MADkitchen\Database\Handler::get_primary_key($this->class, $this->table)} ?? null;
+        $this->row = $this->retrieve_row($this->column, $value) ?? null;
+        $this->key = $this->row->{\MADkitchen\Database\Handler::get_primary_key($this->class, $this->table)} ?? null;
 
         return empty($this->key) ? null : $value;
+    }
+
+    private function retrieve_row($column, $value) {
+        $retval = null;
+        if (empty($retval = \MADkitchen\Database\Handler::get_row_from_lookup_table($this->class, $this->table, $value, $column))) {
+            $retval = reset(\MADkitchen\Modules\Handler::$active_modules[$this->class]['class']->query($this->table, [
+                        $column => $value, //get entire row instead?
+                            //'groupby' => [$column_target],
+                            ]
+                    )->items);
+        }
+        return $retval;
     }
 
 }

@@ -45,9 +45,17 @@ class Query extends \BerlinDB\Database\Query {
 
     public function __construct($query = array()) {
 
-        $this->table_alias = 'mk'.substr(md5($this->table_name), 0, 3);
+        $this->table_alias = 'mk' . substr(md5($this->table_name), 0, 3);
         $this->item_name = strtolower($this->table_name) . '_record';
         $this->item_name_plural = strtolower($this->table_name) . '_records';
+
+        $berlindb_defaults_overrides = [
+            'number' => false,
+            'order' => 'ASC'
+        ];
+        if (!empty($query)) {
+            $query = array_merge($berlindb_defaults_overrides, $query);
+        }
 
         /* BerlinDB does not have support for aggregate functions except COUNT, hence workaround
          * setting 'count' key=true and rewriting 'fields' key through provided hook is used.
