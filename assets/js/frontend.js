@@ -27,17 +27,20 @@ jQuery(document).ready(function ($) {
     });
 });
 
-function one_word_find(src = '', item_sel = '', grp_swc_sel = '', grp_blk_sel = '') {
+//TODO: generalize better
+function one_word_find(item_sel = jQuery([]), grp_swc_sel = jQuery([]), grp_blk_sel = jQuery([]),src = '', close_on_exit=false, open_on_exit = false) {
 
     if (src !== '') {
-        jQuery(grp_swc_sel).hide();
-        jQuery(grp_blk_sel).show();
-        jQuery('[id$="item"]').hide();
-        jQuery(item_sel + ":icontains(" + src + ")").show();
+        grp_swc_sel.hide();
+        grp_blk_sel.show();
+        item_sel.hide();
+        item_sel.filter(":icontains(" + src + ")").show();
     } else {
-        jQuery(grp_swc_sel).show();
-        jQuery(grp_blk_sel).hide();
-        jQuery(item_sel).show();
+        grp_swc_sel.show();
+        grp_blk_sel.hide();
+        item_sel.show();
+        if (close_on_exit) close_on_exit.hide();
+        if (open_on_exit) open_on_exit.show();
 }
 }
 
