@@ -128,15 +128,38 @@ class Handler {
         if (is_array($external_keys)) {
             foreach ($external_keys as $item) {
                 if (!empty($item['tag'])) {
-                    $item['relation'] = $item['relation'] ?? $item['tag'];
-                    $external_keys_schema[] = "{$item['tag']} bigint(20) NOT NULL";
-                    $external_keys_columns[$item['tag']] = [
+
+                    $additional_keys = [];
+                    if (!empty($item['type'])) {
+                        $schema_type = $item['type'];
+                        $column_type = $item['type'];
+                        if (!empty($item['length'])) {
+                            $schema_type = "{$item['type']}({$item['length']})";
+                            $additional_keys['length'] = $item['length'];
+                        }
+                    } else {
+                        $column_type = 'bigint';
+                        $schema_type = 'bigint(20)';
+                        $additional_keys['length'] = '20';
+                    }
+                    if (!empty($item['description'])) {
+
+                        $additional_keys['description'] = $item['description'];
+                    }
+
+                    //relation is to specified tag by default, unless it is expressly indicated as false
+                    if (isset($item['relation']) && $item['relation'] === false) {
+                        unset($item['relation']);
+                    } else {
+                        $additional_keys['relation'] = $item['relation'] ?? $item['tag'];
+                    }
+
+                    $external_keys_schema[] = "{$item['tag']} {$schema_type} NOT NULL";
+                    $external_keys_columns[$item['tag']] = array_merge([
                         'name' => $item['tag'],
-                        'type' => 'bigint',
-                        'length' => '20',
+                        'type' => $column_type,
                         'unsigned' => true,
-                        'relation' => $item['relation'],
-                    ];
+                            ], $additional_keys);
                 }
             }
         }
@@ -182,7 +205,6 @@ class Handler {
                                     'searchable' => true,
                                     'sortable' => true,
                                 ],
-                                //job_tag
                                 "{$tag}_desc" => [
                                     'name' => "{$tag}_desc",
                                     'description' => "Description of $tag item",
