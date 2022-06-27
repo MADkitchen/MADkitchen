@@ -76,6 +76,19 @@ class Handler {
         return $retval;
     }
 
+    //TODO: consider to extend to queries with count>1
+    public static function maybe_get_rows_from_lookup_table($class, $table, $query) {
+        $retval = false;
+        if (self::is_lookup_table($class, $table) &&
+                !empty($table_cols = self::get_tables_data($class, $table)['columns']) &&
+                count($item = array_intersect_assoc(array_keys($table_cols), array_keys($query))) === 1 &&
+                count($value = reset($query)) === 1
+        ) {
+            $retval[] = self::get_row_from_lookup_table($class, $table, is_scalar($value) ? $value : reset($value), key($query));
+        }
+        return $retval;
+    }
+
     public static function get_row_from_lookup_table($class, $table, $key_src, $column_src = 'id') { //TODO: generalize 'id'
         $retval = null;
         if (!empty($table_data = self::maybe_get_lookup_table($class, $table))) {

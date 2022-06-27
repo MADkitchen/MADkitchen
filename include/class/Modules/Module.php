@@ -76,7 +76,14 @@ class Module {
     public function query($table = '0', $query = array()) {
         $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\$table\\Query";
 
-        return new $class($query);
+        //Check if it's a simple query which can be resolved with buffered lookup tables
+        if (($items = \MADkitchen\Database\Handler::maybe_get_rows_from_lookup_table($this->name, $table, $query)) !== false) {
+            $retval = new $class();
+            $retval->items = $items;
+        } else {
+            $retval = new $class($query);
+        }
+        return $retval;
     }
 
     protected function table($table = '0') {
