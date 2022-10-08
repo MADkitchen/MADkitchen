@@ -19,30 +19,23 @@
 
 namespace MADkitchen\Helpers;
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+trait MagicGet {
 
-class Common {
+    public function __get($key) {
+        // Class method to try and call
+        $method = "get_{$key}";
 
-    public static function sanitize_key($key) {
-        if (is_scalar($key)) {
-            return preg_replace('/[^a-z0-9_\-]/', '', strtolower($key));
-        } else {
-            return null;
+        // Return property if exists
+        if (method_exists($this, $method)) {
+            return call_user_func(array($this, $method));
+
+            // Return get method results if exists
+        } elseif (property_exists($this, $key)) {
+            return $this->{$key};
         }
-    }
 
-    public static function ksort_by_array($array, $sort_list) {
-        $array_bkp = $array;
-        $sort_list = array_values($sort_list);
-        if (uksort($array_bkp, function ($a, $b) use ($sort_list) {
-                    return array_search($a, $sort_list) - array_search($b, $sort_list);
-                }) === true) {
-            return $array_bkp;
-        } else {
-            return $array;
-        }
+        // Return null if not exists
+        return null;
     }
 
 }

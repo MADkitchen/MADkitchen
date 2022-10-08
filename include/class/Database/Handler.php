@@ -41,14 +41,23 @@ class Handler {
                 $retval = self::get_table_column_prop_by_key($class, $table_data['columns'][$key]['relation'], $key, $prop);
             }
         } else { //If nothing is found try the other tables from that class to find original column
-            $entry = new \MADkitchen\Database\Entry($class, $key);
-            $value_tab = $entry->get_source_table($key);
+            $entry = new \MADkitchen\Database\Item($class, $key);
+            $value_tab = $entry->source_table;
             //if ($value_tab) {
             $retval = self::get_tables_data($class, $value_tab)['columns'][$key][$prop] ?? null;
             //}
         }
 
         return $retval;
+    }
+
+    public static function get_source_table($class, $column) {
+        $tables_data = self::get_tables_data($class);
+        foreach ($tables_data as $table_key => $table_data) {
+            if (!empty($tables_data[$table_key]['columns'][$column]) && empty($tables_data[$table_key]['columns'][$column]['relation'])) {
+                return $table_key;
+            }
+        }
     }
 
     public static function is_column_external($class, $table, $column) {
@@ -264,7 +273,7 @@ class Handler {
                 foreach ($table_data['columns'] as $column_name => $column_data) {
                     //Check for independent columns only, excluding primary key which is obvious.
                     if (!self::is_column_external($class, $table_name, $column_name) &&
-                            $column_name != \MADkitchen\Database\Handler::get_primary_key($class, $table_name))
+                            $column_name != \MADkitchen\Database\Handler::get_primary_key_column_name($class, $table_name))
                         $retval[] = $column_name;
                 }
             }
@@ -273,7 +282,7 @@ class Handler {
         return $retval;
     }
 
-    public static function get_primary_key($class, $table) {
+    public static function get_primary_key_column_name($class, $table) {
         $retval = null;
         $table_data = \MADkitchen\Database\Handler::get_tables_data($class, $table);
 
@@ -286,6 +295,18 @@ class Handler {
             }
         }
 
+        return $retval;
+    }
+
+    public static function get_row_by_column_value($class, $table, $column, $value) {
+        $retval = null;
+        if (empty($retval = \MADkitchen\Database\Handler::get_row_from_lookup_table($class, $table, $value, $column))) {
+            $retval = reset(\MADkitchen\Modules\Handler::$active_modules[$class]['class']->query($table, [
+                        $column => $value, //get entire row instead?
+                            //'groupby' => [$column_target],
+                            ]
+                    )->items);
+        }
         return $retval;
     }
 
