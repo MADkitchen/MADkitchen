@@ -118,7 +118,10 @@ class Item {
         $primary_key = (int) $primary_key;
         $this->reset();
         if ($primary_key > 0 && !empty($primary_key_column_name = \MADkitchen\Database\Handler::get_primary_key_column_name($this->class, $this->source_table))) {
-            $this->row = \MADkitchen\Database\Handler::get_row_by_column_value($this->class, $this->source_table, $primary_key_column_name, $primary_key) ?? null;
+            $this->row = reset(\MADkitchen\Modules\Handler::$active_modules[$this->class]['class']->query($this->source_table, [
+                        $primary_key_column_name => $primary_key,
+                            ]
+                    )->items);
             $this->value = $this->row->{$this->column} ?? null;
             $this->primary_key = empty($this->value) ? null : $primary_key;
         }
@@ -133,7 +136,10 @@ class Item {
      */
     public function set_value($value) {
         $this->reset();
-        $this->row = \MADkitchen\Database\Handler::get_row_by_column_value($this->class, $this->source_table, $this->column, $value) ?? null;
+        $this->row = reset(\MADkitchen\Modules\Handler::$active_modules[$this->class]['class']->query($this->source_table, [
+                        $this->column => $value,
+                            ]
+                    )->items);
         $this->primary_key = $this->row->{\MADkitchen\Database\Handler::get_primary_key_column_name($this->class, $this->source_table)} ?? null;
         $this->value = empty($this->primary_key) ? null : $value;
         return $this->row;

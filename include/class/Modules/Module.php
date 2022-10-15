@@ -77,7 +77,7 @@ class Module {
         $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\$table\\Query";
 
         //Check if it's a simple query which can be resolved with buffered lookup tables
-        if (($items = \MADkitchen\Database\Handler::maybe_get_rows_from_lookup_table($this->name, $table, $query)) !== false) {
+        if (!empty($items = \MADkitchen\Database\Lookup::simple_lookup_query($this->name, $table, $query))) {
             $retval = new $class();
             $retval->items = $items;
         } else {

@@ -23,9 +23,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * Collection of methods to handle MADkitchen database tables.
+ *
+ * @package     Database
+ * @subpackage  Handler
+ * @since       0.1
+ */
 class Handler {
-
-    public static $lookup_tables = array();
 
     public static function get_default_table_name($module_name) {
         return MK_TABLES_PREFIX . strtolower($module_name) . '_table';
@@ -64,52 +69,9 @@ class Handler {
         return self::get_tables_data($class, $table)['columns'][$column]['relation'] ?? false;
     }
 
-    public static function is_lookup_table($class, $table) {
-        return empty(self::get_tables_data($class, $table)['lookup_table']) ? false : true;
-    }
 
-    public static function maybe_get_lookup_table($class, $table) {
-        $retval = null;
-        if (self::is_lookup_table($class, $table)) {
-            if (!isset(self::$lookup_tables[$table])) {
-                self::$lookup_tables[$table] = \MADkitchen\Modules\Handler::$active_modules[$class]['class']->query($table, [
-                            'groupby' => ['id'], //TODO: generalize 'id'
-                            'order' => 'ASC',
-                            ''
-                                ] //TODO: check default LIMIT
-                        )->items;
-            }
 
-            $retval = self::$lookup_tables[$table];
-        }
-        return $retval;
-    }
 
-    //TODO: consider to extend to queries with count>1
-    public static function maybe_get_rows_from_lookup_table($class, $table, $query) {
-        $retval = false;
-        if (self::is_lookup_table($class, $table) &&
-                !empty($table_cols = self::get_tables_data($class, $table)['columns']) &&
-                count($item = array_intersect_assoc(array_keys($table_cols), array_keys($query))) === 1 &&
-                count($value = reset($query)) === 1
-        ) {
-            $retval[] = self::get_row_from_lookup_table($class, $table, is_scalar($value) ? $value : reset($value), key($query));
-        }
-        return $retval;
-    }
-
-    public static function get_row_from_lookup_table($class, $table, $key_src, $column_src = 'id') { //TODO: generalize 'id'
-        $retval = null;
-        if (!empty($table_data = self::maybe_get_lookup_table($class, $table))) {
-            foreach ($table_data as $row) {
-                if ($row->$column_src == $key_src) {
-                    $retval = $row;
-                    break;
-                }
-            }
-        }
-        return $retval;
-    }
 
     //TODO: simplify and separate external array filter function
     public static function get_table_column_prop_array_by_key($class, $table, $keys_in, $prop = 'name', $key_out_type = 'name', $get_val_from = array()) {
@@ -255,33 +217,6 @@ class Handler {
         return $retval;
     }
 
-    //TODO: check names function/vars...
-    //TODO: check synergy with get_table_column_prop_by_key
-    //TODO check if it can be simplified with is_lookup_table
-    public static function get_lookup_columns($class, $column, $this_table) {
-        $retval = [];
-        $this_table_data = self::get_tables_data($class, $this_table);
-
-        foreach (self::get_tables_data($class) as $table_name => $table_data) {
-            //Exclude from search this table, which the resolution is referring to.
-            if ($this_table === $table_name) {
-                continue;
-            }
-            //Find independent columns in each table correlated to this column (independent or not)
-            if (isset($table_data['columns'][$column]) && !isset($this_table_data['columns'][$column])) {
-                unset($table_data['columns'][$column]);
-                foreach ($table_data['columns'] as $column_name => $column_data) {
-                    //Check for independent columns only, excluding primary key which is obvious.
-                    if (!self::is_column_external($class, $table_name, $column_name) &&
-                            $column_name != \MADkitchen\Database\Handler::get_primary_key_column_name($class, $table_name))
-                        $retval[] = $column_name;
-                }
-            }
-        }
-
-        return $retval;
-    }
-
     public static function get_primary_key_column_name($class, $table) {
         $retval = null;
         $table_data = \MADkitchen\Database\Handler::get_tables_data($class, $table);
@@ -300,7 +235,7 @@ class Handler {
 
     public static function get_row_by_column_value($class, $table, $column, $value) {
         $retval = null;
-        if (empty($retval = \MADkitchen\Database\Handler::get_row_from_lookup_table($class, $table, $value, $column))) {
+        if (empty($retval = \MADkitchen\Database\Lookup::get_row_from_lookup_table($class, $table, $value, $column))) {
             $retval = reset(\MADkitchen\Modules\Handler::$active_modules[$class]['class']->query($table, [
                         $column => $value, //get entire row instead?
                             //'groupby' => [$column_target],
