@@ -141,7 +141,6 @@ class Handler {
 
                     $external_keys_schema[] = "{$item['tag']} {$schema_type} NOT NULL";
                     $external_keys_columns[$item['tag']] = array_merge([
-                        'name' => $item['tag'],
                         'type' => $column_type,
                         'unsigned' => true,
                             ], $additional_keys);
@@ -166,7 +165,6 @@ class Handler {
                     'columns' => array_merge(
                             [
                                 'id' => [
-                                    'name' => 'id',
                                     'type' => 'bigint',
                                     'length' => '20',
                                     'unsigned' => true,
@@ -175,7 +173,6 @@ class Handler {
                                     'sortable' => true,
                                 ],
                                 $tag => [
-                                    'name' => $tag,
                                     'description' => $desc,
                                     'type' => 'tinytext',
                                     'unsigned' => true,
@@ -183,7 +180,6 @@ class Handler {
                                     'sortable' => true,
                                 ],
                                 "{$tag}_name" => [
-                                    'name' => "{$tag}_name",
                                     'description' => "Name of $tag item",
                                     'type' => 'tinytext',
                                     'unsigned' => true,
@@ -191,7 +187,6 @@ class Handler {
                                     'sortable' => true,
                                 ],
                                 "{$tag}_desc" => [
-                                    'name' => "{$tag}_desc",
                                     'description' => "Description of $tag item",
                                     'type' => 'text',
                                     'unsigned' => true,
@@ -230,7 +225,7 @@ class Handler {
                 }
             }
         }
-        return \MADkitchen\Database\Handler::get_table_column_setting($class, $table, $retval, 'name');
+        return $retval;
     }
 
 }

@@ -169,11 +169,10 @@ class Lookup {
         $watchdog = 0;
         do {
             $i = false;
-            foreach ($data_buffer as $column_key) {
-                $this_table = $base_table ?? \MADkitchen\Database\Handler::get_source_table($class, $column_key);
-                $lookup_columns = array_intersect($data_cols, \MADkitchen\Database\Lookup::find_related_external_lookup_columns($class, $column_key, $this_table));
-                $column_name = \MADkitchen\Database\Handler::get_table_column_setting($class, $this_table, $column_key, 'name');
-                $column_item = new MADkitchen\Database\Item($class, $column_key);
+            foreach ($data_buffer as $column_name) {
+                $this_table = $base_table ?? \MADkitchen\Database\Handler::get_source_table($class, $column_name);
+                $lookup_columns = array_intersect($data_cols, \MADkitchen\Database\Lookup::find_related_external_lookup_columns($class, $column_name, $this_table));
+                $column_item = new MADkitchen\Database\Item($class, $column_name);
                 $found = null;
                 if (empty($lookup_columns)) {
                     $watchdog = 0;
@@ -185,47 +184,47 @@ class Lookup {
                     $x = \MADkitchen\Modules\Handler::$active_modules[$class]['class']->query($this_table,  array_merge($default_args, $query))->items;
 
                     foreach ($x as $item) {
-                        if (\MADkitchen\Database\Handler::get_source_table($class, $column_key) === ($this_table)) { //will not be used eventually...
+                        if (\MADkitchen\Database\Handler::get_source_table($class, $column_name) === ($this_table)) { //will not be used eventually...
                             $column_item->set_row($item);
                         } else {
-                            $column_item->set_key($item->$column_key);
+                            $column_item->set_key($item->$column_name);
                         }
                         if (!empty($column_item)) {
-                            $data_tot[$column_key][] = $column_item;
+                            $data_tot[$column_name][] = $column_item;
                         }
                     }
-                    $data_buffer = array_diff($data_buffer, [$column_key]);
+                    $data_buffer = array_diff($data_buffer, [$column_name]);
                 } else {
                     $i = true;
                     $lookup_column = reset($lookup_columns);
                     if (!empty($data_tot[$lookup_column])) { //first match only
                         $search_table = ts_get_table_source($lookup_column);
 
-                        if (MADkitchen\Database\Handler::is_column_external('TimeTracker', $search_table, $column_key)) {
+                        if (MADkitchen\Database\Handler::is_column_external('TimeTracker', $search_table, $column_name)) {
                             $x = ts_query_items(
-                                    ['id' => array_map(fn($y) => $y->row->$column_key, //TODO generalize 'id'
+                                    ['id' => array_map(fn($y) => $y->row->$column_name, //TODO generalize 'id'
                                                 $data_tot[$lookup_column]),
                                     /* 'orderby' => [
                                       $a,
                                       ], */
                                     ],
-                                    ts_get_table_source($column_key)
+                                    ts_get_table_source($column_name)
                             );
                             foreach ($x as $item) {
                                 $column_item->set_row($item); //ts_get_entry_by_id($a, $item->$a);
                                 if (!empty($column_item)) {
-                                    $data_tot[$column_key][] = $column_item;
+                                    $data_tot[$column_name][] = $column_item;
                                 }
                             }
                         } else {
                             foreach ($data_tot[$lookup_column] as $lookup_entry) {
                                 $column_item->set_row( $lookup_entry->row);
                                 if (!empty($column_item)) {
-                                    $data_tot[$column_key][] = $column_item;
+                                    $data_tot[$column_name][] = $column_item;
                                 }
                             }
                         }
-                        $data_buffer = array_diff($data_buffer, [$column_key]);
+                        $data_buffer = array_diff($data_buffer, [$column_name]);
                     }
                 }
             }

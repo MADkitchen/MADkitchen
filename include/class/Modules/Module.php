@@ -102,8 +102,9 @@ class Module {
                     $namespace = $this->namespace . "\\$key";
 
                     //Schema
-                    $columns = var_export($table['columns'], true);
-                    eval("namespace $namespace;class Schema extends \BerlinDB\Database\Schema{protected \$columns=$columns;}");
+                    $columns = array_walk($table['columns'], function (&$value, $key) {$value['name'] = $key;});
+                    $columns_var_exp = var_export($columns, true);
+                    eval("namespace $namespace;class Schema extends \BerlinDB\Database\Schema{protected \$columns=$columns_var_exp;}");
 
                     //Table
                     $schema = addslashes($table['schema']);
