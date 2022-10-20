@@ -36,24 +36,29 @@ class Handler {
         return MK_TABLES_PREFIX . strtolower($module_name) . '_table';
     }
 
-    public static function get_table_column_prop_by_key($class, $table, $key, $prop) {
-        $retval = null;
-        $table_data = self::get_tables_data($class, $table);
-        if (isset($table_data['columns'][$key]) && isset($table_data['columns'][$key][$prop])) {
-            if (self::is_column_external($class, $table, $key) === false) {
-                $retval = $table_data['columns'][$key][$prop];
-            } else { //If it's external key search in that table
-                $retval = self::get_table_column_prop_by_key($class, $table_data['columns'][$key]['relation'], $key, $prop);
-            }
-        } else { //If nothing is found try the other tables from that class to find original column
-            $entry = new \MADkitchen\Database\Item($class, $key);
-            $value_tab = $entry->source_table;
-            //if ($value_tab) {
-            $retval = self::get_tables_data($class, $value_tab)['columns'][$key][$prop] ?? null;
-            //}
-        }
+    //can return false if colname=string and retval=[]
+    public static function get_table_column_setting($class, $table, $column_name, $prop) {
 
-        return $retval;
+        $column_names_in = is_array($column_name) ? $column_names : [$column_names];
+        $retval = [];
+
+        foreach ($column_names_in as $column_name) {
+            $table_data = self::get_tables_data($class, $table);
+            if (isset($table_data['columns'][$column_name]) && isset($table_data['columns'][$column_name][$prop])) {
+                if (self::is_column_external($class, $table, $column_name) === false) {
+                    $retval[] = $table_data['columns'][$column_name][$prop];
+                } else { //If it's external key search in that table
+                    $retval[] = self::get_table_column_setting($class, $table_data['columns'][$column_name]['relation'], $column_name, $prop);
+                }
+            } else { //If nothing is found try the other tables from that class to find original column
+                $entry[] = new \MADkitchen\Database\Item($class, $column_name);
+                $value_tab = $entry->source_table;
+                //if ($value_tab) {
+                $retval[] = self::get_tables_data($class, $value_tab)['columns'][$column_name][$prop] ?? null;
+                //}
+            }
+        }
+        return is_array($column_names) ? $retval : reset($retval);
     }
 
     public static function get_source_table($class, $column) {
@@ -69,20 +74,16 @@ class Handler {
         return self::get_tables_data($class, $table)['columns'][$column]['relation'] ?? false;
     }
 
-
-
-
-
     //TODO: simplify and separate external array filter function
-    public static function get_table_column_prop_array_by_key($class, $table, $keys_in, $prop = 'name', $key_out_type = 'name', $get_val_from = array()) {
+    public static function get_table_column_settings_array($class, $table, $keys_in, $prop = 'name', $key_out_type = 'name', $get_val_from = array()) {
         $retval = [];
         foreach ($keys_in as $key) {
             //TODO: check if recursion is actually needed or not
             if (is_array($key)) {
-                get_table_column_prop_array_by_key($class, $table, $key, $prop, $key_out_type, $get_val_from);
+                self::get_table_column_settings_array($class, $table, $key, $prop, $key_out_type, $get_val_from);
             }
-            $prop_out = self::get_table_column_prop_by_key($class, $table, $key, $prop);
-            $key_out = self::get_table_column_prop_by_key($class, $table, $key, $key_out_type);
+            $prop_out = self::get_table_column_setting($class, $table, $key, $prop);
+            $key_out = self::get_table_column_setting($class, $table, $key, $key_out_type);
 
             if ($prop_out === '' || $key_out === '') {
                 continue;
@@ -102,7 +103,7 @@ class Handler {
         return $retval;
     }
 
-    public static function get_std_lookup_table($tag, $desc, $external_keys = []) {
+    public static function create_std_lookup_table($tag, $desc, $external_keys = []) {
         $retval = [];
         $external_keys_schema = [];
         $external_keys_columns = [];
@@ -229,20 +230,7 @@ class Handler {
                 }
             }
         }
-
-        return $retval;
-    }
-
-    public static function get_row_by_column_value($class, $table, $column, $value) {
-        $retval = null;
-        if (empty($retval = \MADkitchen\Database\Lookup::get_row_from_lookup_table($class, $table, $value, $column))) {
-            $retval = reset(\MADkitchen\Modules\Handler::$active_modules[$class]['class']->query($table, [
-                        $column => $value, //get entire row instead?
-                            //'groupby' => [$column_target],
-                            ]
-                    )->items);
-        }
-        return $retval;
+        return \MADkitchen\Database\Handler::get_table_column_setting($class, $table, $retval, 'name');
     }
 
 }
