@@ -30,8 +30,9 @@ if (!defined('ABSPATH')) {
  * @subpackage  Item
  * @since       0.1
  */
-class Item {
+class ColumnsResolver {
 
+    //TODO: consider manual getters for performance
     use \MADkitchen\Helpers\MagicGet;
 
     /**
@@ -43,119 +44,83 @@ class Item {
     protected $class;
 
     /**
-     * The target column name
+     * The source table name.
+     *
+     * It is the original lookup table name, if applicable.
      *
      * @var string
      * @since 0.1
      */
-    protected $column;
+    protected $table;
+    private $primary = '';
+    private $resolved = [];
+    private $aggregated = [];
+    private $external = [];
+    private $external_source = [];
+    private $referral = [];
+    private $referral_source = [];
 
-    /**
-     * The table element from target column corresponding to target row (or target primary id key)
-     *
-     * @var string
-     * @since 0.1
-     */
-    protected $value;
-
-    /**
-     * The value in the primary id column of the table
-     *
-     * @var string
-     * @since 0.1
-     */
-    protected $primary_key;
-
-    /**
-     * The table name
-     *
-     * @var string
-     * @since 0.1
-     */
-    protected $source_table;
-
-    /**
-     * The table row object
-     *
-     * @var \Berlindb\Database\Row
-     * @since 0.1
-     */
-    protected $row;
-
-    /**
-     * Resets current value / coordinates
-     *
-     * @param void
-     * @return void
-     */
-    private function reset() {
-        $this->value = null;
-        $this->primary_key = null;
-        $this->row = null;
-    }
-
-    /**
-     * Class constructor
+    /*
+     * Creates ColumnsResolver object on successful initialization.
      *
      * @param string $class The target MADkitchen module class
-     * @param string $column The target column name
-     * @return void
+     * @param string $table The target table name
+     * @param array $column_names Limit the columns resolved to $column_names array instead of all table columns
+     * @return \MADkitchen\Database\ColumnsResolver|null Created ColumnsResolver object or null on failure
      */
-    public function __construct($class, $column) {
+    function __construct(string $class, string $table, array $column_names = []) {
 
         $this->class = (!empty($class) && !empty(\MADkitchen\Modules\Handler::$active_modules[$class]['class'])) ? $class : null;
-        $this->source_table = $this->class ? \MADkitchen\Database\Handler::get_source_table($class, $column) : null;
-        $this->column = $this->source_table ? $column : null;
-    }
+        $this->table = !empty($this->class) && Handler::is_table_existing($class, $table) ? $table : null;
 
-    /**
-     * Sets a target primary id column key as coordinate and stores the corresponding row and table value of current target column.
-     *
-     * @param string $primary_key The value in the primary id column of the table
-     * @return \Berlindb\Database\Row The row corresponding to the primary id key set
-     */
-    public function set_key($primary_key) {
-        $primary_key = (int) $primary_key;
-        $this->reset();
-        if ($primary_key > 0 && !empty($primary_key_column_name = \MADkitchen\Database\Handler::get_primary_key_column_name($this->class, $this->source_table))) {
-            $this->row = reset(\MADkitchen\Modules\Handler::$active_modules[$this->class]['class']->query($this->source_table, [
-                        $primary_key_column_name => $primary_key,
-                            ]
-                    )->items);
-            $this->value = $this->row->{$this->column} ?? null;
-            $this->primary_key = empty($this->value) ? null : $primary_key;
+        if (empty($this->table))
+            return;
+
+        $this->primary = \MADkitchen\Database\Handler::get_primary_key_column_name($this->class, $this->table);
+
+        if (empty($column_names))
+            $column_names = array_keys(\MADkitchen\Database\Handler::get_tables_data($this->class, $this->table)['columns']);
+
+        // Separate local column names from column referring to external tables
+        foreach ($column_names as $column_name) {
+            $filtered_column_name = Handler::filter_aggregated_column_name($column_name);
+            if (Handler::is_column_existing($this->class, $this->table, $filtered_column_name)) {
+                $column_source_table = Handler::is_column_reference($this->class, $this->table, $filtered_column_name) ? Handler::get_source_table($this->class, $filtered_column_name) : $this->table;
+
+                if ($column_source_table === $this->table) {
+                    if (Handler::is_column_aggregated($column_name)) {
+                        $this->aggregated[] = $column_name;
+                    } else if ($this->primary !== $column_name) {
+                        $this->resolved[] = $column_name;
+                    }
+                } else {
+                    if (!Handler::is_column_aggregated($column_name)) {
+                        $this->referral[] = $column_name;
+                        $this->referral_source[$column_name] = $column_source_table;
+                    }
+                }
+            } else {
+                if (!Handler::is_column_aggregated($column_name)) {
+                    $column_source_table = Handler::get_source_table($this->class, $filtered_column_name);
+                    if ($column_source_table) {
+                        $this->external[] = $column_name;
+                        $this->external_source[$column_name] = $column_source_table;
+                    }
+                }
+            }
         }
-        return $this->row;
     }
 
-    /**
-     * Sets a target table value from current target column as coordinate and stores the first row and the first primary id column key found.
-     *
-     * @param string $value The table element from target column
-     * @return \Berlindb\Database\Row The row corresponding to the primary id key set
-     */
-    public function set_value($value) {
-        $this->reset();
-        $this->row = reset(\MADkitchen\Modules\Handler::$active_modules[$this->class]['class']->query($this->source_table, [
-                        $this->column => $value,
-                            ]
-                    )->items);
-        $this->primary_key = $this->row->{\MADkitchen\Database\Handler::get_primary_key_column_name($this->class, $this->source_table)} ?? null;
-        $this->value = empty($this->primary_key) ? null : $value;
-        return $this->row;
+    public function get_local() {
+        return array_merge($this->aggregated, $this->resolved, $this->referral);
     }
 
-    /**
-     * Sets a target table row and stores the corresponding table value from current target column and primary id column key.
-     *
-     * @param \Berlindb\Database\Row $row The target row
-     * @return void
-     */
-    public function set_row(\Berlindb\Database\Row $row) {
-        $this->reset();
-        $this->row = $row;
-        $this->primary_key = $row->{\MADkitchen\Database\Handler::get_primary_key_column_name($this->class, $this->source_table)};
-        $this->value = $row->{$this->column};
+    public function get_local_no_aggregated() {
+        return array_merge($this->resolved, $this->referral);
+    }
+
+    public function is_valid() {
+        return !empty($this->primary);
     }
 
 }
