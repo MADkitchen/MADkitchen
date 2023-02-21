@@ -155,110 +155,81 @@ class Lookup {
         return $retval;
     }
 
-    //TODO: check names function/vars...
-    //TODO: check synergy with get_table_column_prop_by_key
-    //TODO check if it can be simplified with is_lookup_table
     /*
-     * Finds all independent columns from tables other than $this_table related to $target_column in that table. Primary key columns are excluded.
+     * Creates ItemResolver object on successful initialization.
      *
      * @param string $class The target MADkitchen module class
-     * @param string $target_column The name of the target column for which the external master column is searched.
-     * @param string $this_table The name of the table where searched target column is contained
-     * @return array Array of possible external master columns from the module class
+     * @param string $column The target column name
+     * @param string $data_ctx Column primary key value or Row from $table_ctx to resolve item
+     * @param string $table_ctx Context table for resolution with $data_ctx
+     * @return \MADkitchen\Database\ItemResolver|null Created ItemResolver object or null on failure
      */
-    public static function find_related_external_lookup_columns($class, $target_column, $this_table) {
-        $retval = [];
-        $this_table_data = \MADkitchen\Database\Handler::get_tables_data($class, $this_table);
-        $all_tables_data = \MADkitchen\Database\Handler::get_tables_data($class);
-        unset($all_tables_data[$this_table]);
 
-        foreach ($all_tables_data as $table_name => $table_data) {
-            //Find independent columns in each table correlated to this column (independent or not)
-            if (isset($table_data['columns'][$target_column]) && !isset($this_table_data['columns'][$target_column])) {
-                unset($table_data['columns'][$target_column]);
-                foreach ($table_data['columns'] as $column_name => $column_data) {
-                    //Check for independent columns only, excluding primary key which is obvious.
-                    if (!\MADkitchen\Database\Handler::is_column_external($class, $table_name, $column_name) &&
-                            $column_name != \MADkitchen\Database\Handler::get_primary_key_column_name($class, $table_name))
-                        $retval[] = $column_name;
+    public static function build_ItemResolver(string $class, string $column, mixed $data_ctx = null, string $table_ctx = '') {
+        $retval = new ItemResolver($class, $column, $data_ctx, $table_ctx);
+        if ($retval->is_valid() === false || (!empty($data_ctx) && $retval->is_resolved() === false)) {
+            return null;
+        } else {
+            return $retval;
+        }
+    }
+
+    /*
+     * Creates ColumnsResolver object on successful initialization.
+     *
+     * @param string $class The target MADkitchen module class
+     * @param string $table The target table name
+     * @param array $column_names Limit the columns resolved to $column_names array instead of all table columns
+     * @return \MADkitchen\Database\ColumnsResolver|null Created ColumnsResolver object or null on failure
+     */
+
+    public static function build_ColumnsResolver(string $class, string $table, array $column_names = []) {
+        $retval = new ColumnsResolver($class, $table, $column_names);
+
+        if ($retval->is_valid()) {
+            return $retval;
+        } else {
+            return null;
+        }
+    }
+
+    /*
+     * Mimic a groupby query by a specific column on a given ItemResolver row set
+     *
+     * @param array $rows The ItemResolver row set
+     * @param string $groupby_column The column used to group rows
+     * @param array $sum_up_columns Columns to be summed up during the grouping.
+     * @return \MADkitchen\Database\ColumnsResolver|null Created ColumnsResolver object or null on failure
+     */
+
+    public static function groupby_items_rows_by_column(array $rows, string $groupby_column, array $sum_up_columns = []) {
+        $retval = [];
+        $unique_column_values = Handler::get_columns_array_values_from_rows($rows, [$groupby_column], true);
+
+        if (empty($unique_column_values))
+            return $retval;
+
+        foreach ($unique_column_values[$groupby_column] as $key => $value) {
+            $found_first_row = false;
+            foreach ($rows as $row) {
+                if ($row[$groupby_column]->value === $value) {
+                    if (!$found_first_row) {
+                        $retval[$key] = array_map(fn($y) => $y->value, $row);
+                        $found_first_row = true;
+                    } else {
+                        if (empty($sum_up_columns)) {
+                            break;
+                        } else {
+                            foreach ($sum_up_columns as $sum_up_column) {
+                                $retval[$key][$sum_up_column] = $retval[$key][$sum_up_column] + $row[$sum_up_column]->value ?? $retval[$key][$sum_up_column];
+                            }
+                        }
+                    }
                 }
             }
         }
 
         return $retval;
-    }
-
-    public static function recursively_resolve_lookup_group($class, $data_cols, $query = [], $base_table = null) {
-        $data_cols = array_values($data_cols); //TODO: check if associative arrays are really needed upstream
-        $data_buffer = $data_cols;
-        $data_tot = [];
-        $watchdog = 0;
-        do {
-            $i = false;
-            foreach ($data_buffer as $column_name) {
-                $this_table = $base_table ?? \MADkitchen\Database\Handler::get_source_table($class, $column_name);
-                $lookup_columns = array_intersect($data_cols, \MADkitchen\Database\Lookup::find_related_external_lookup_columns($class, $column_name, $this_table));
-                $column_item = new MADkitchen\Database\Item($class, $column_name);
-                $found = null;
-                if (empty($lookup_columns)) {
-                    $watchdog = 0;
-
-                    $default_args = self::is_lookup_table($class, $this_table) ? [] : [
-                        'groupby' => [$column_name],
-                    ];
-
-                    $x = \MADkitchen\Modules\Handler::$active_modules[$class]['class']->query($this_table,  array_merge($default_args, $query))->items;
-
-                    foreach ($x as $item) {
-                        if (\MADkitchen\Database\Handler::get_source_table($class, $column_name) === ($this_table)) { //will not be used eventually...
-                            $column_item->set_row($item);
-                        } else {
-                            $column_item->set_key($item->$column_name);
-                        }
-                        if (!empty($column_item)) {
-                            $data_tot[$column_name][] = $column_item;
-                        }
-                    }
-                    $data_buffer = array_diff($data_buffer, [$column_name]);
-                } else {
-                    $i = true;
-                    $lookup_column = reset($lookup_columns);
-                    if (!empty($data_tot[$lookup_column])) { //first match only
-                        $search_table = ts_get_table_source($lookup_column);
-
-                        if (MADkitchen\Database\Handler::is_column_external('TimeTracker', $search_table, $column_name)) {
-                            $x = ts_query_items(
-                                    ['id' => array_map(fn($y) => $y->row->$column_name, //TODO generalize 'id'
-                                                $data_tot[$lookup_column]),
-                                    /* 'orderby' => [
-                                      $a,
-                                      ], */
-                                    ],
-                                    ts_get_table_source($column_name)
-                            );
-                            foreach ($x as $item) {
-                                $column_item->set_row($item); //ts_get_entry_by_id($a, $item->$a);
-                                if (!empty($column_item)) {
-                                    $data_tot[$column_name][] = $column_item;
-                                }
-                            }
-                        } else {
-                            foreach ($data_tot[$lookup_column] as $lookup_entry) {
-                                $column_item->set_row( $lookup_entry->row);
-                                if (!empty($column_item)) {
-                                    $data_tot[$column_name][] = $column_item;
-                                }
-                            }
-                        }
-                        $data_buffer = array_diff($data_buffer, [$column_name]);
-                    }
-                }
-            }
-            if ($watchdog++ > 3)
-                break;
-        } while ($i);
-
-        return MADkitchen\Helpers\Common::ksort_by_array($data_tot, $data_cols);
     }
 
 }
