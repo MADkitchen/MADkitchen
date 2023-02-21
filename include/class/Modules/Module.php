@@ -73,15 +73,14 @@ class Module {
         $this->init_module();
     }
 
-    public function query($table = '0', $query = array()) {
+    public function query($table = '0', $query = array(), $force_direct_query = false) {
         $class = "\\" . MK_MODULES_NAMESPACE . "$this->name\\$table\\Query";
 
-        //Check if it's a simple query which can be resolved with buffered lookup tables
-        if (!empty($items = \MADkitchen\Database\Lookup::simple_lookup_query($this->name, $table, $query))) {
-            $retval = new $class();
-            $retval->items = $items;
+        $retval = new $class();
+        if ($force_direct_query === true) {
+            $retval->query_direct($query);
         } else {
-            $retval = new $class($query);
+            $retval->query($query);
         }
         return $retval;
     }
@@ -102,8 +101,10 @@ class Module {
                     $namespace = $this->namespace . "\\$key";
 
                     //Schema
-                    $columns = array_walk($table['columns'], function (&$value, $key) {$value['name'] = $key;});
-                    $columns_var_exp = var_export($columns, true);
+                    array_walk($table['columns'], function (&$value, $key) {
+                        $value['name'] = $key;
+                    });
+                    $columns_var_exp = var_export($table['columns'], true);
                     eval("namespace $namespace;class Schema extends \BerlinDB\Database\Schema{protected \$columns=$columns_var_exp;}");
 
                     //Table
