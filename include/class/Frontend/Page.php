@@ -84,7 +84,7 @@ class Page {
          * a post that doesn't really exist.
          */
         //TODO: find a cleaner way...
-        $post->ID = 1000000000000;
+        $post->ID = 0;
 
         /**
          * Static means a page, not a post.
