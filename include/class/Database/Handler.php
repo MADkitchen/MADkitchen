@@ -32,46 +32,94 @@ if (!defined('ABSPATH')) {
  */
 class Handler {
 
+    public static $query_aggregate_func_list = [
+        //COUNT(*) already covered in BerlinDB
+        'sum',
+        'min',
+        'max',
+        'average',
+        'group_concat',
+        'first',
+        'last',
+    ];
+
     public static function get_default_table_name($module_name) {
         return MK_TABLES_PREFIX . strtolower($module_name) . '_table';
     }
 
-    //can return false if colname=string and retval=[]
-    public static function get_table_column_setting($class, $table, $column_name, $prop) {
+    /*
+     * Gets the value of a column setting from module class definitions.
+     *
+     * If setting is not found in requested table, source table is tried instead.
+     *
+     * @param string $class The target MADkitchen module class
+     * @param string $table The target table name
+     * @param string $column_name The name of the target column for the setting search.
+     * @param string $setting The setting name searched (keys of 'columns' element from \MADkitchen\Modules\Module 'table_data' property).
+     * @return string|null The value of the setting
+     */
 
-        $column_names_in = is_array($column_name) ? $column_names : [$column_names];
-        $retval = [];
+    public static function get_table_column_setting($class, $table, $column_name, $setting) {
+        $table_data = self::get_tables_data($class, $table);
 
-        foreach ($column_names_in as $column_name) {
-            $table_data = self::get_tables_data($class, $table);
-            if (isset($table_data['columns'][$column_name]) && isset($table_data['columns'][$column_name][$prop])) {
-                if (self::is_column_external($class, $table, $column_name) === false) {
-                    $retval[] = $table_data['columns'][$column_name][$prop];
-                } else { //If it's external key search in that table
-                    $retval[] = self::get_table_column_setting($class, $table_data['columns'][$column_name]['relation'], $column_name, $prop);
-                }
-            } else { //If nothing is found try the other tables from that class to find original column
-                $entry[] = new \MADkitchen\Database\Item($class, $column_name);
-                $value_tab = $entry->source_table;
-                //if ($value_tab) {
-                $retval[] = self::get_tables_data($class, $value_tab)['columns'][$column_name][$prop] ?? null;
-                //}
-            }
-        }
-        return is_array($column_names) ? $retval : reset($retval);
+        if (!empty($table_data['columns'][$column_name][$setting]))
+            return $table_data['columns'][$column_name][$setting];
+
+        return self::get_tables_data($class, self::get_source_table($class, $column_name))['columns'][$column_name][$setting] ?? null;
     }
 
     public static function get_source_table($class, $column) {
         $tables_data = self::get_tables_data($class);
         foreach ($tables_data as $table_key => $table_data) {
-            if (!empty($tables_data[$table_key]['columns'][$column]) && empty($tables_data[$table_key]['columns'][$column]['relation'])) {
+            if (self::is_column_existing($class, $table_key, $column) && !self::is_column_reference($class, $table_key, $column)) {
                 return $table_key;
             }
         }
     }
 
-    public static function is_column_external($class, $table, $column) {
-        return self::get_tables_data($class, $table)['columns'][$column]['relation'] ?? false;
+    public static function get_referred_tables($class, $column) {
+        $tables_data = self::get_tables_data($class);
+        $res = [];
+        foreach ($tables_data as $table_key => $table_data) {
+            if (self::is_column_existing($class, $table_key, $column) && self::is_column_reference($class, $table_key, $column)) {
+                $res[] = $table_key;
+            }
+        }
+        return $res;
+    }
+
+    public static function is_column_reference($class, $table, $column) {
+        return !empty(self::get_tables_data($class, $table)['columns'][$column]['relation']);
+    }
+
+    public static function is_column_existing($class, $table, $column) {
+        return !empty(self::get_tables_data($class, $table)['columns'][$column]);
+    }
+
+    public static function is_table_existing($class, $table) {
+        return !empty(self::get_tables_data($class, $table));
+    }
+
+    public static function filter_aggregated_column_name($aggregate_column) {
+        $aggregate_prefixes = array_map(fn($x) => $x . '_', array_merge(\MADkitchen\Database\Handler::$query_aggregate_func_list, ['count']));
+        return str_replace($aggregate_prefixes, '', $aggregate_column);
+
+        //return key_exists($original_column, self::get_tables_data($class, $table)['columns']) && $aggregate_column !== $original_column ? $original_column : false;
+    }
+
+    public static function is_column_aggregated($column) {
+        return !self::filter_aggregated_column_name($column) === $column;
+
+        //return key_exists($original_column, self::get_tables_data($class, $table)['columns']) && $aggregate_column !== $original_column ? $original_column : false;
+    }
+
+    public static function remove_aggregate_columns(array $columns) {
+        $retval = [];
+        foreach ($columns as $column) {
+            if (self::is_column_aggregated($column))
+                $retval[] = $column;
+        }
+        return $retval;
     }
 
     //TODO: simplify and separate external array filter function
@@ -82,8 +130,8 @@ class Handler {
             if (is_array($key)) {
                 self::get_table_column_settings_array($class, $table, $key, $prop, $key_out_type, $get_val_from);
             }
-            $prop_out = self::get_table_column_setting($class, $table, $key, $prop);
-            $key_out = self::get_table_column_setting($class, $table, $key, $key_out_type);
+            $prop_out = self::get_table_column_setting($class, $table, $key, $prop) ?: 'name'; //name workaround!
+            $key_out = self::get_table_column_setting($class, $table, $key, $key_out_type) ?: 'name'; //name workaround!
 
             if ($prop_out === '' || $key_out === '') {
                 continue;
@@ -226,6 +274,54 @@ class Handler {
             }
         }
         return $retval;
+    }
+
+    //review first
+    public static function get_columns_array_from_rows($rows, $columns_filter = null, $unique = false) {
+        $retval = [];
+
+        if (empty($rows))
+            return $retval;
+
+        $row_keys = array_keys(reset($rows));
+        $filter = empty($columns_filter) ? $row_keys : array_intersect($columns_filter, $row_keys);
+
+        foreach ($rows as $key => $row) {
+            foreach ($filter as $key => $value) {
+                $retval[$value][] = $row[$value];
+            }
+        }
+
+        if ($unique) {
+            $retval = array_map(fn($x) => array_unique($x), $retval);
+        }
+        return empty($columns_filter) ? $retval : \MADkitchen\Helpers\Common::ksort_by_array($retval, $columns_filter);
+    }
+
+    public static function get_columns_array_primary_keys_from_rows($rows, $columns_filter = null, $unique = false) {
+        $retval = self::get_columns_array_from_rows($rows, $columns_filter, $unique);
+
+        //TODO:improve and add tests?
+        $test = gettype(reset(reset($retval)));
+
+        if ($test === 'object') {
+            $retval = array_map(fn($x) => array_map(fn($y) => $y->primary_key, $x), $retval); //TODO generalize as primary key is not available for aggregates
+        }
+
+        return empty($columns_filter) ? $retval : \MADkitchen\Helpers\Common::ksort_by_array($retval, $columns_filter);
+    }
+
+    public static function get_columns_array_values_from_rows($rows, $columns_filter = null, $unique = false) {
+        $retval = self::get_columns_array_from_rows($rows, $columns_filter, $unique);
+
+        //TODO:improve and add tests?
+        $test = gettype(reset(reset($retval)));
+
+        if ($test === 'object') {
+            $retval = array_map(fn($x) => array_map(fn($y) => $y->value, $x), $retval); //TODO generalize as primary key is not available for aggregates
+        }
+
+        return empty($columns_filter) ? $retval : \MADkitchen\Helpers\Common::ksort_by_array($retval, $columns_filter);
     }
 
 }
