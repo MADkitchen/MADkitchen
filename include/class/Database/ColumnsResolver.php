@@ -26,9 +26,10 @@ if (!defined('ABSPATH')) {
 /**
  * Class to handle single items from a specific MADkitchen table column.
  *
+ * @since       0.2
+ *
  * @package     Database
  * @subpackage  Item
- * @since       0.1
  */
 class ColumnsResolver {
 
@@ -38,36 +39,105 @@ class ColumnsResolver {
     /**
      * The target MADkitchen module class
      *
+     * @since 0.2
+     *
      * @var string
-     * @since 0.1
      */
     protected $class;
 
     /**
      * The source table name.
      *
-     * It is the original lookup table name, if applicable.
+     * @since 0.2
      *
      * @var string
-     * @since 0.1
      */
     protected $table;
+
+    /**
+     * The primary key column name.
+     *
+     * @since 0.2
+     *
+     * @var string
+     */
     private $primary = '';
+
+    /**
+     * The names array of column defined in current table.
+     *
+     * Value of this columns are actually reported in current table.
+     *
+     * @since 0.2
+     *
+     * @var array
+     */
     private $resolved = [];
+
+    /**
+     * The names array of columns which are results of aggregation functions.
+     *
+     * @see Handler::query_aggregate_func_list
+     * @since 0.2
+     *
+     * @var array
+     */
     private $aggregated = [];
+
+    /**
+     * The names array of columns which are not included in current table.
+     *
+     * @since 0.2
+     *
+     * @var array
+     */
     private $external = [];
+
+    /**
+     * The names array of source tables of the stored external columns.
+     *
+     * Items indexes are consistent with external columns array ones.
+     *
+     * @since 0.2
+     *
+     * @var array
+     */
     private $external_source = [];
+
+    /**
+     * The names array of columns which are included as a reference only and defined in an external table.
+     *
+     * Value in this columns correspond to primary key index in the source table.
+     *
+     * @since 0.2
+     *
+     * @var array
+     */
     private $referral = [];
+
+    /**
+     * The names array of source tables of the stored referral columns.
+     *
+     * Items indexes are consistent with referral columns array ones.
+     *
+     * @since 0.2
+     *
+     * @var array
+     */
     private $referral_source = [];
 
     /*
-     * Creates ColumnsResolver object on successful initialization.
+     * ColumnsResolver class constructor.
+     *
+     * Parses column of a given class/column and divide them in groups depending on data origin.
+     *
+     * @since 0.2
      *
      * @param string $class The target MADkitchen module class
      * @param string $table The target table name
-     * @param array $column_names Limit the columns resolved to $column_names array instead of all table columns
-     * @return \MADkitchen\Database\ColumnsResolver|null Created ColumnsResolver object or null on failure
+     * @param array $column_names Use specified column names array instead of table columns per table definition
      */
+
     function __construct(string $class, string $table, array $column_names = []) {
 
         $this->class = (!empty($class) && !empty(\MADkitchen\Modules\Handler::$active_modules[$class]['class'])) ? $class : null;
@@ -111,16 +181,28 @@ class ColumnsResolver {
         }
     }
 
+    /*
+     * Returns all column names which are not external, including results of agregated functions
+     *
+     * @since 0.2
+     *
+     * @return array Local columns names array
+     */
+
     public function get_local() {
         return array_merge($this->aggregated, $this->resolved, $this->referral);
     }
 
+    /*
+     * Returns all column names which are not external, excluding results of agregated functions
+     *
+     * @since 0.2
+     *
+     * @return array Local columns names array, excluding aggregated ones
+     */
+
     public function get_local_no_aggregated() {
         return array_merge($this->resolved, $this->referral);
-    }
-
-    public function is_valid() {
-        return !empty($this->primary);
     }
 
 }

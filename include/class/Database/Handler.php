@@ -43,12 +43,19 @@ class Handler {
         'last',
     ];
 
+    /*
+     * Returns the base table name.
+     *
+     * @param string $module_name The module name for which the base table name is built.
+     * @return string The base table name.
+     */
+
     public static function get_default_table_name($module_name) {
         return MK_TABLES_PREFIX . strtolower($module_name) . '_table';
     }
 
     /*
-     * Gets the value of a column setting from module class definitions.
+     * Returns the value of a column setting from module class definitions.
      *
      * If setting is not found in requested table, source table is tried instead.
      *
@@ -67,6 +74,14 @@ class Handler {
 
         return self::get_tables_data($class, self::get_source_table($class, $column_name))['columns'][$column_name][$setting] ?? null;
     }
+
+    /*
+     * Returns the source table of a given column.
+     *
+     * @param string $class The target MADkitchen module class
+     * @param string $column The target column name
+     * @return string|null The value of the setting
+     */
 
     public static function get_source_table($class, $column) {
         $tables_data = self::get_tables_data($class);
@@ -100,15 +115,15 @@ class Handler {
         return !empty(self::get_tables_data($class, $table));
     }
 
-    public static function filter_aggregated_column_name($aggregate_column) {
-        $aggregate_prefixes = array_map(fn($x) => $x . '_', array_merge(\MADkitchen\Database\Handler::$query_aggregate_func_list, ['count']));
-        return str_replace($aggregate_prefixes, '', $aggregate_column);
+    public static function is_column_aggregated($column) {
+        return !self::filter_aggregated_column_name($column) === $column;
 
         //return key_exists($original_column, self::get_tables_data($class, $table)['columns']) && $aggregate_column !== $original_column ? $original_column : false;
     }
 
-    public static function is_column_aggregated($column) {
-        return !self::filter_aggregated_column_name($column) === $column;
+    public static function filter_aggregated_column_name($aggregate_column) {
+        $aggregate_prefixes = array_map(fn($x) => $x . '_', array_merge(\MADkitchen\Database\Handler::$query_aggregate_func_list, ['count']));
+        return str_replace($aggregate_prefixes, '', $aggregate_column);
 
         //return key_exists($original_column, self::get_tables_data($class, $table)['columns']) && $aggregate_column !== $original_column ? $original_column : false;
     }

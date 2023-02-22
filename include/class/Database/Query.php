@@ -46,7 +46,6 @@ class Query extends \BerlinDB\Database\Query {
         $this->item_name_plural = strtolower($this->table_name) . '_records';
         $this->class_shortname = \MADkitchen\Modules\Handler::get_module_name(get_class($this));
         $this->table_shortname = str_replace(Handler::get_default_table_name($this->class_shortname) . "_", '', $this->table_name);
-        //$this->test_row = Handler::get_tables_data($this->class_shortname, $this->table_shortname)['columns'];
     }
 
     private function query_defaults_override($query = []) {
