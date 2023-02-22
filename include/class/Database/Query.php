@@ -77,7 +77,7 @@ class Query extends \BerlinDB\Database\Query {
         /* BerlinDB does not have support for aggregate functions except COUNT, hence workaround
          * setting 'count' key=true and rewriting 'fields' key through provided hook is used.
          */
-        if (!empty($query) && array_intersect_key($query, array_flip(Handler::$query_aggregate_func_list))) {
+        if (!empty($query) && array_intersect_key($query, array_flip(Handler::get_query_aggregate_func_list()))) {
             if (isset($query['count'])) {
                 $this->count_flag = (bool) $query['count'];
             }
@@ -114,7 +114,7 @@ class Query extends \BerlinDB\Database\Query {
 
     public function fields_override($args) {
         $items = [];
-        foreach (array_intersect_key($this->query_vars, array_flip(Handler::$query_aggregate_func_list)) as $key => $value) {
+        foreach (array_intersect_key($this->query_vars, array_flip(Handler::get_query_aggregate_func_list())) as $key => $value) {
             foreach (array_filter(array_map(array($this, 'parse_column_name'), $value)) as $item) {
                 $items[] = strtoupper($key) . '(' . $item . ') AS ' . strtolower($key) . '_' . str_replace("{$this->table_alias}.", '', $item);
             }

@@ -26,13 +26,21 @@ if (!defined('ABSPATH')) {
 /**
  * Collection of methods to handle MADkitchen database tables.
  *
+ * @since       0.1
+ *
  * @package     Database
  * @subpackage  Handler
- * @since       0.1
  */
 class Handler {
 
-    public static $query_aggregate_func_list = [
+    /**
+     * List of accepted aggregating functions in a query.
+     *
+     * @since 0.2
+     *
+     * @var array
+     */
+    private static $query_aggregate_func_list = [
         //COUNT(*) already covered in BerlinDB
         'sum',
         'min',
@@ -42,6 +50,10 @@ class Handler {
         'first',
         'last',
     ];
+
+    public static function get_query_aggregate_func_list() {
+        return self::$query_aggregate_func_list;
+    }
 
     /*
      * Returns the base table name.
@@ -122,7 +134,7 @@ class Handler {
     }
 
     public static function filter_aggregated_column_name($aggregate_column) {
-        $aggregate_prefixes = array_map(fn($x) => $x . '_', array_merge(\MADkitchen\Database\Handler::$query_aggregate_func_list, ['count']));
+        $aggregate_prefixes = array_map(fn($x) => $x . '_', array_merge(self::get_query_aggregate_func_list(), ['count']));
         return str_replace($aggregate_prefixes, '', $aggregate_column);
 
         //return key_exists($original_column, self::get_tables_data($class, $table)['columns']) && $aggregate_column !== $original_column ? $original_column : false;
