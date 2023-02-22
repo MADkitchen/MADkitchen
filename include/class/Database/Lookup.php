@@ -175,25 +175,6 @@ class Lookup {
     }
 
     /*
-     * Creates ColumnsResolver object on successful initialization.
-     *
-     * @param string $class The target MADkitchen module class
-     * @param string $table The target table name
-     * @param array $column_names Limit the columns resolved to $column_names array instead of all table columns
-     * @return \MADkitchen\Database\ColumnsResolver|null Created ColumnsResolver object or null on failure
-     */
-
-    public static function build_ColumnsResolver(string $class, string $table, array $column_names = []) {
-        $retval = new ColumnsResolver($class, $table, $column_names);
-
-        if ($retval->is_valid()) {
-            return $retval;
-        } else {
-            return null;
-        }
-    }
-
-    /*
      * Mimic a groupby query by a specific column on a given ItemResolver row set
      *
      * @param array $rows The ItemResolver row set

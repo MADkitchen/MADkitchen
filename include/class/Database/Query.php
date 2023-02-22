@@ -163,7 +163,7 @@ class Query extends \BerlinDB\Database\Query {
         $test_row = array_diff(reset($target_items), $columns_filter);
 
         // Build local lookup array
-        $resolved_columns = Lookup::build_ColumnsResolver($this->class_shortname, $this->table_shortname, array_keys($test_row));
+        $resolved_columns = new ColumnsResolver($this->class_shortname, $this->table_shortname, array_keys($test_row));
         $referral_queries = Handler::get_columns_array_from_rows($target_items, $resolved_columns->referral, true);
         $referral_lookup_query_objects = [];
         foreach ($resolved_columns->referral as $referral_key => $referral_column) {
@@ -212,7 +212,7 @@ class Query extends \BerlinDB\Database\Query {
             return;
 
         // Search array to contain only columns missing in current table
-        $counter = Lookup::build_ColumnsResolver($this->class_shortname, $this->table_shortname, $target_columns)->external;
+    $counter = (new ColumnsResolver($this->class_shortname, $this->table_shortname, $target_columns))->external;
 
         $count = count($counter);
         do {
@@ -280,7 +280,7 @@ class Query extends \BerlinDB\Database\Query {
             return false;
 
         foreach ($ref_tables as $table) {
-            $columns = Lookup::build_ColumnsResolver($this->class_shortname, $table);
+            $columns = new ColumnsResolver($this->class_shortname, $table);
             foreach ($columns->resolved as $column1) {
                 //already visited
                 if (in_array($column1, $chain))
