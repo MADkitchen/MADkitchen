@@ -59,7 +59,7 @@ class Lookup {
      */
 
     public static function is_lookup_table($class, $table) {
-        return empty(\MADkitchen\Database\Handler::get_tables_data($class, $table)['lookup_table']) ? false : true;
+        return empty(TablesHandler::get_tables_data($class, $table)['lookup_table']) ? false : true;
     }
 
     /*
@@ -82,7 +82,7 @@ class Lookup {
 
         $query = array_diff_key($query, array_flip($filtered_keys));
 
-        if (empty($query) || empty($table_cols = \MADkitchen\Database\Handler::get_tables_data($class, $table)['columns']))
+        if (empty($query) || empty($table_cols = TablesHandler::get_tables_data($class, $table)['columns']))
             return false;
 
         //simple item list query
@@ -111,7 +111,7 @@ class Lookup {
             if (!isset(self::$lookup_tables[$class][$table])) {
                 self::$lookup_tables[$class][$table] = \MADkitchen\Modules\Handler::$active_modules[$class]['class']->query($table,
                                 [
-                                    'groupby' => [\MADkitchen\Database\Handler::get_primary_key_column_name($class, $table)],
+                                    'groupby' => [\MADkitchen\Database\ColumnsHandler::get_primary_key_column_name($class, $table)],
                                 ],
                                 true
                         )->items;
@@ -138,7 +138,7 @@ class Lookup {
         if (self::is_simple_query($class, $table, $query) && $table_data = self::maybe_get_lookup_table($class, $table)) {
             if (key_exists('groupby', $query)) {
                 // Change groupby list to columns search arrays
-                $query = Handler::get_columns_array_from_rows($table_data, is_scalar($query['groupby']) ? [$query['groupby']] : $query['groupby'], true);
+                $query = ColumnsHandler::get_columns_array_from_rows($table_data, is_scalar($query['groupby']) ? [$query['groupby']] : $query['groupby'], true);
             }
             foreach ($table_data as $row) {
                 foreach ($query as $column_name => $column_data) {
@@ -185,7 +185,7 @@ class Lookup {
 
     public static function groupby_items_rows_by_column(array $rows, string $groupby_column, array $sum_up_columns = []) {
         $retval = [];
-        $unique_column_values = Handler::get_columns_array_values_from_rows($rows, [$groupby_column], true);
+        $unique_column_values = ColumnsHandler::get_columns_array_values_from_rows($rows, [$groupby_column], true);
 
         if (empty($unique_column_values))
             return $retval;

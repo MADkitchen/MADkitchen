@@ -122,10 +122,10 @@ class ItemResolver {
     public function __construct(string $class, string $column, mixed $data_ctx = null, string $table_ctx = '') {
 
         $this->class = (!empty($class) && !empty(\MADkitchen\Modules\Handler::$active_modules[$class]['class'])) ? $class : null;
-        $this->source_table = !empty($this->class) ? Handler::get_source_table($class, Handler::filter_aggregated_column_name($column)) : null;
+        $this->source_table = !empty($this->class) ? TablesHandler::get_source_table($class, ColumnsHandler::filter_aggregated_column_name($column)) : null;
         $this->column = !empty($this->source_table) ? $column : null;
 
-        if (!empty($this->column) && Handler::get_primary_key_column_name($this->class, $this->source_table) !== $this->column) {
+        if (!empty($this->column) && ColumnsHandler::get_primary_key_column_name($this->class, $this->source_table) !== $this->column) {
             $this->is_valid = true;
         }
 
@@ -147,7 +147,7 @@ class ItemResolver {
             return;
         $primary_key = (int) $primary_key;
         $this->reset();
-        if ($primary_key > 0 && !empty($primary_key_column_name = \MADkitchen\Database\Handler::get_primary_key_column_name($this->class, $this->source_table))) {
+        if ($primary_key > 0 && !empty($primary_key_column_name = \MADkitchen\Database\ColumnsHandler::get_primary_key_column_name($this->class, $this->source_table))) {
             $this->row = reset(\MADkitchen\Modules\Handler::$active_modules[$this->class]['class']->query($this->source_table, [
                         $primary_key_column_name => $primary_key,
                             ]
@@ -174,7 +174,7 @@ class ItemResolver {
                     $this->column => $value,
                         ]
                 )->items);
-        $this->primary_key = $this->row->{\MADkitchen\Database\Handler::get_primary_key_column_name($this->class, $this->source_table)} ?? null;
+        $this->primary_key = $this->row->{\MADkitchen\Database\ColumnsHandler::get_primary_key_column_name($this->class, $this->source_table)} ?? null;
         $this->value = empty($this->primary_key) ? null : $value;
         return $this->row;
     }
@@ -192,7 +192,7 @@ class ItemResolver {
             return;
         $this->reset();
         $this->row = $row;
-        $this->primary_key = $this->row[Handler::get_primary_key_column_name($this->class, $this->source_table)] ?? null;
+        $this->primary_key = $this->row[ColumnsHandler::get_primary_key_column_name($this->class, $this->source_table)] ?? null;
         $this->value = $this->row[$this->column] ?? null;
     }
 
@@ -209,7 +209,7 @@ class ItemResolver {
     public function set_item_in_context(mixed $data_ctx, string $table_ctx) {
         if (!$this->is_valid)
             return;
-        if (!empty(Handler::get_tables_data($this->class)[$table_ctx]) && Handler::is_column_existing($this->class, $table_ctx, Handler::filter_aggregated_column_name($this->column))) {
+        if (!empty(TablesHandler::get_tables_data($this->class)[$table_ctx]) && ColumnsHandler::is_column_existing($this->class, $table_ctx, ColumnsHandler::filter_aggregated_column_name($this->column))) {
             $this->reset();
             if ($this->source_table !== $table_ctx) {
                 if (is_scalar($data_ctx)) {

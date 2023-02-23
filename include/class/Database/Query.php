@@ -45,7 +45,7 @@ class Query extends \BerlinDB\Database\Query {
         $this->item_name = strtolower($this->table_name) . '_record';
         $this->item_name_plural = strtolower($this->table_name) . '_records';
         $this->class_shortname = \MADkitchen\Modules\Handler::get_module_name(get_class($this));
-        $this->table_shortname = str_replace(Handler::get_default_table_name($this->class_shortname) . "_", '', $this->table_name);
+        $this->table_shortname = str_replace(TablesHandler::get_default_table_name($this->class_shortname) . "_", '', $this->table_name);
     }
 
     private function query_defaults_override($query = []) {
@@ -77,7 +77,7 @@ class Query extends \BerlinDB\Database\Query {
         /* BerlinDB does not have support for aggregate functions except COUNT, hence workaround
          * setting 'count' key=true and rewriting 'fields' key through provided hook is used.
          */
-        if (!empty($query) && array_intersect_key($query, array_flip(Handler::get_query_aggregate_func_list()))) {
+        if (!empty($query) && array_intersect_key($query, array_flip(ColumnsHandler::get_query_aggregate_func_list()))) {
             if (isset($query['count'])) {
                 $this->count_flag = (bool) $query['count'];
             }
@@ -114,7 +114,7 @@ class Query extends \BerlinDB\Database\Query {
 
     public function fields_override($args) {
         $items = [];
-        foreach (array_intersect_key($this->query_vars, array_flip(Handler::get_query_aggregate_func_list())) as $key => $value) {
+        foreach (array_intersect_key($this->query_vars, array_flip(ColumnsHandler::get_query_aggregate_func_list())) as $key => $value) {
             foreach (array_filter(array_map(array($this, 'parse_column_name'), $value)) as $item) {
                 $items[] = strtoupper($key) . '(' . $item . ') AS ' . strtolower($key) . '_' . str_replace("{$this->table_alias}.", '', $item);
             }
@@ -163,10 +163,10 @@ class Query extends \BerlinDB\Database\Query {
 
         // Build local lookup array
         $resolved_columns = new ColumnsResolver($this->class_shortname, $this->table_shortname, array_keys($test_row));
-        $referral_queries = Handler::get_columns_array_from_rows($target_items, $resolved_columns->referral, true);
+        $referral_queries = ColumnsHandler::get_columns_array_from_rows($target_items, $resolved_columns->referral, true);
         $referral_lookup_query_objects = [];
         foreach ($resolved_columns->referral as $referral_key => $referral_column) {
-            $primary_column_name = Handler::get_primary_key_column_name($this->class_shortname, $resolved_columns->referral_source[$referral_column]);
+            $primary_column_name = ColumnsHandler::get_primary_key_column_name($this->class_shortname, $resolved_columns->referral_source[$referral_column]);
             $referral_lookup_query_objects[$referral_column] = \MADkitchen\Modules\Handler::$active_modules[$this->class_shortname]['class']->query($resolved_columns->referral_source[$referral_column],
                     [
                         $primary_column_name => $referral_queries[$referral_column],
@@ -224,7 +224,7 @@ class Query extends \BerlinDB\Database\Query {
                         $lookup_column_name = $test_column_name;
 
                         $found_source_table = $test_row[$lookup_column_name]->source_table;
-                        $search_query_key = Handler::get_primary_key_column_name($this->class_shortname, $found_source_table);
+                        $search_query_key = ColumnsHandler::get_primary_key_column_name($this->class_shortname, $found_source_table);
                         //First occurrence only.
                         // TODO: check if additional tests are applicable to select the right $test_key in case of multiple occurrencies.
                         break;
@@ -237,13 +237,13 @@ class Query extends \BerlinDB\Database\Query {
                 // Query found lookup column source table to get correspondances with target column
                 $query_object = \MADkitchen\Modules\Handler::$active_modules[$this->class_shortname]['class']->query($test_row[$lookup_column_name]->source_table,
                         [
-                            $search_query_key => reset(Handler::get_columns_array_primary_keys_from_rows($this->items_resolved, [$lookup_column_name], true)),
+                            $search_query_key => reset(ColumnsHandler::get_columns_array_primary_keys_from_rows($this->items_resolved, [$lookup_column_name], true)),
                         ],
                 );
 
                 // Build local lookup array
                 $query_object->resolve_items([$target_column_name, $lookup_column_name]);
-                $external_column_rows_array = Handler::get_columns_array_from_rows($query_object->items_resolved, [$target_column_name, $lookup_column_name]);
+                $external_column_rows_array = ColumnsHandler::get_columns_array_from_rows($query_object->items_resolved, [$target_column_name, $lookup_column_name]);
                 $external_column_lookup_array = array_combine(array_map(fn($x) => $x->primary_key, $external_column_rows_array[$lookup_column_name]), $external_column_rows_array[$target_column_name]);
 
                 // Add target column to each row based on local lookup array
@@ -271,10 +271,10 @@ class Query extends \BerlinDB\Database\Query {
         //TODO: check if column exists?
         //TODO: Document only last element of chain is used as starting point
 
-        if (Handler::is_column_reference($this->class_shortname, $this->table_shortname, end($chain)))
+        if (ColumnsHandler::is_column_reference($this->class_shortname, $this->table_shortname, end($chain)))
             return true;
 
-        $ref_tables = Handler::get_referred_tables($this->class_shortname, end($chain));
+        $ref_tables = TablesHandler::get_referred_tables($this->class_shortname, end($chain));
         if (empty($ref_tables))
             return false;
 
@@ -306,9 +306,9 @@ class Query extends \BerlinDB\Database\Query {
         //TODO: check if need to add is_scalar test
 
         foreach ($chain as $column_name) {
-            $source_table = Handler::get_source_table($this->class_shortname, $column_name);
+            $source_table = TablesHandler::get_source_table($this->class_shortname, $column_name);
             $this_query_object = \MADkitchen\Modules\Handler::$active_modules[$this->class_shortname]['class']->query($source_table, $this_query);
-            $this_query = [$column_name => reset(Handler::get_columns_array_from_rows($this_query_object->items, [Handler::get_primary_key_column_name($this->class_shortname, $source_table)], true))];
+            $this_query = [$column_name => reset(ColumnsHandler::get_columns_array_from_rows($this_query_object->items, [ColumnsHandler::get_primary_key_column_name($this->class_shortname, $source_table)], true))];
         }
 
         return $this_query;
@@ -345,7 +345,7 @@ class Query extends \BerlinDB\Database\Query {
             }
 
             //corresponding query in this table for current column
-            $unique_local_items = Handler::get_columns_array_from_rows($this->items, [$local_column_name], true);
+            $unique_local_items = ColumnsHandler::get_columns_array_from_rows($this->items, [$local_column_name], true);
 
             //try to resolve recursively external columns starting from this query items
             $extra_items = $this->append_external_columns($external_queried_columns);
