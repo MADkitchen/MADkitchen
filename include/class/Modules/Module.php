@@ -27,6 +27,10 @@ class Module {
     protected $namespace = '';
     protected $table_data = array();
     protected $pages_data = array();
+    protected $use_common_styles = false;
+    protected $use_common_scripts = false;
+    protected $styles = [];
+    protected $scripts = [];
 
     public function __isset($key = '') {
 
@@ -141,6 +145,27 @@ class Module {
             }
         }
 
+        //Scripts and styles
+        if ($this->use_common_scripts) {
+            array_unshift($this->scripts, ['common_frontend_js', plugin_dir_url(__FILE__) . '/assets/js/frontend.js', array('jquery')]);
+        }
+
+        if ($this->use_common_styles) {
+            array_unshift($this->styles, ['common_frontend_css', plugin_dir_url(__FILE__) . '/assets/css/frontend.css']);
+        }
+
+        if ($this->styles) {
+            add_action('wp_enqueue_scripts', function () {
+                $this->handle_styles_scripts($this->styles);
+            });
+        }
+
+        if ($this->scripts) {
+            add_action('wp_enqueue_scripts', function () {
+                $this->handle_styles_scripts($this->scripts);
+            });
+        }
+
         \MADkitchen\Modules\Handler::$active_modules[$this->name]['is_loaded'] = true;
     }
 
@@ -157,6 +182,26 @@ class Module {
 
         if ($this->autoload) {
             $this->load_module();
+        }
+    }
+
+    private function handle_styles_scripts($args) {
+        foreach ($args as $item) {
+            if (isset($item[1]) && substr($item[1], -4) === ".css") {
+                if (!wp_style_is('w3css', 'registered')) {
+                    wp_register_style(...$item);
+                }
+                if (!wp_style_is('w3css', 'enqueued')) {
+                    wp_enqueue_style($item[0]);
+                }
+            } else if (isset($item[1]) && substr($item[1], -4) === ".js") {
+                if (!wp_script_is('w3css', 'registered')) {
+                    wp_register_script(...$item);
+                }
+                if (!wp_script_is('w3css', 'enqueued')) {
+                    wp_enqueue_script($item[0]);
+                }
+            }
         }
     }
 

@@ -25,14 +25,11 @@ defined('ABSPATH') || exit;
 class w3css extends \MADkitchen\Modules\Module {
 
     public function load_module() {
-        parent::load_module();
-        if (!wp_style_is('w3css', 'registered')) {
-            wp_register_style('w3css', plugin_dir_url(__FILE__) . 'data/w3.css');
-        }
+        $this->styles = [
+            ['w3css', plugin_dir_url(__FILE__) . 'data/w3.css'],
+        ];
 
-        if (!wp_style_is('w3css', 'enqueued')) {
-            wp_enqueue_style('w3css');
-        }
+        parent::load_module();
     }
 
 }

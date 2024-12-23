@@ -25,10 +25,11 @@ defined('ABSPATH') || exit;
 class jQuery extends \MADkitchen\Modules\Module {
 
     public function load_module() {
+        $this->scripts = [
+            ["jquery"],
+        ];
+
         parent::load_module();
-        if (!wp_script_is('jquery', 'enqueued')) {
-            wp_enqueue_script("jquery");
-        }
     }
 
 }

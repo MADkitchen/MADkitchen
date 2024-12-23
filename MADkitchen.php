@@ -66,27 +66,6 @@ require_once( MK_PATH . DIRECTORY_SEPARATOR . join(DIRECTORY_SEPARATOR, MK_CLASS
 require_once( MK_PATH . '/autoloader.php' );
 
 /**
- * Register common scripts/files
- *
- * @since 0.1.0
- */
-wp_register_script('common_frontend_js', plugin_dir_url(__FILE__) . '/assets/js/frontend.js', array('jquery'));
-wp_register_style('common_frontend_css', plugin_dir_url(__FILE__) . '/assets/css/frontend.css');
-
-/**
- * Include Admin/Frontend resources
- *
- * @since 0.1.0
- */
-if (is_admin()) {
-    //require_once( MK_PATH . '/include/admin/users.php' );
-    //require_once( MK_PATH . '/include/admin/options.php' );
-} else {
-    wp_enqueue_script('common_frontend_js');
-    wp_enqueue_style('common_frontend_css');
-}
-
-/**
  * Load installed modules
  *
  * @since 0.1.0

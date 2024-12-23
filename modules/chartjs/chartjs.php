@@ -25,17 +25,13 @@ defined('ABSPATH') || exit;
 class chartjs extends \MADkitchen\Modules\Module {
 
     public function load_module() {
-        parent::load_module();
-        if (!wp_script_is('chartjs', 'registered')) {
-            wp_register_script('chartjs', plugin_dir_url(__FILE__) . 'data/chart.min.js');
-            wp_register_script('chartjs_datalabels', plugin_dir_url(__FILE__) . 'plugins/chartjs-plugin-datalabels.min.js');
-            wp_register_script('chartjs_plugins_loader', plugin_dir_url(__FILE__) . 'plugins/loader.js');
-        }
+        $this->scripts = [
+            ['chartjs', plugin_dir_url(__FILE__) . 'data/chart.min.js'],
+            ['chartjs_datalabels', plugin_dir_url(__FILE__) . 'plugins/chartjs-plugin-datalabels.min.js'],
+            ['chartjs_plugins_loader', plugin_dir_url(__FILE__) . 'plugins/loader.js'],
+        ];
 
-        if (!wp_script_is('chartjs', 'enqueued')) {
-            wp_enqueue_script("chartjs");
-            wp_enqueue_script("chartjs_datalabels");
-            wp_enqueue_script("chartjs_plugins_loader");
-        }
+        parent::load_module();
     }
+
 }
