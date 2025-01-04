@@ -137,11 +137,16 @@ class Module {
         }
 
         //Default includes
-        $init_includes = array("functions.php");
+        $init_includes = array(
+                ["source" => "functions.php", "functions" => ['include_source']],
+                ["source" => "ajax_functions.php", "functions" => ['include_source', 'add_ajax_hooks']],
+        );
         foreach ($init_includes as $item) {
-            $target = MK_MODULES_PATH . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $item;
+            $target = MK_MODULES_PATH . DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR . $item['source'];
             if (file_exists($target)) {
-                include_once $target;
+                foreach ($item['functions'] as $function) {
+                    [$this, $function]($target);
+                }
             }
         }
 
@@ -205,4 +210,16 @@ class Module {
         }
     }
 
+    private function include_source($source) {
+        include_once $source;
+    }
+
+    private function add_ajax_hooks($source) {
+        $source_content = file_get_contents($source);
+        preg_match_all('/function\s+([a-zA-Z0-9_]+)\s*\(/', $source_content, $matches);
+        foreach ($matches[1] as $match) {
+            add_action('wp_ajax_' . $match, $match);
+            add_action('wp_ajax_nopriv_' . $match, $match);
+        }
+    }
 }
