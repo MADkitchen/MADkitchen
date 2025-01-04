@@ -51,11 +51,13 @@ class Page {
          */
         $post = new \stdClass;
 
+        $post->post_type='page';
+
         /**
          * The author ID for the post.  Usually 1 is the sys admin.  Your
          * plugin can find out the real author ID without any trouble.
          */
-        $post->post_author = 1;
+        $post->post_author = 0;
 
         /**
          * The safe name for the post.  This is the post slug.
@@ -116,6 +118,27 @@ class Page {
         return($post);
     }
 
+    private function test_slug($query, $slug) {
+        $test_keys = ['pagename', 'name'];
+        foreach ($test_keys as $test_key) {
+            if (key_exists($test_key, $query->query)) {
+                if ($query->query[$test_key] == $slug) {
+                    return true;
+                }
+            }
+        }
+
+        //Covers case of attachments with %pagename% permalink structure
+        $parts = explode('/', $slug);
+        if (key_exists('attachment', $query->query) && end($parts) == $query->query['attachment'] && rtrim(ltrim($_SERVER["REQUEST_URI"], '/'), '/') == $slug){
+            unset($query->query['attachment']);
+            return true;
+        }
+
+
+        return false;
+    }
+
     public function inject_page($posts, $query) {
         /**
          * Check if the requested page matches our target
@@ -123,12 +146,10 @@ class Page {
         foreach ($this->pages as $item) {
             //TODO: check if test can be more specific for $query post_type
             //TODO: check if $wp test can be done with $query only
-            if (key_exists('pagename', $query->query) && $query->query['pagename'] == $item['slug'] && 0 !== strncmp('wp_template', $query->query_vars['post_type'], 11)) {
-
+            if ($this->test_slug($query, $item['slug']) && 0 !== strncmp('wp_template', $query->query_vars['post_type'], 11)) {
                 //Add the fake post
                 $posts = NULL;
                 $posts[] = $this->create_page($item);
-
                 /**
                  * Trick wp_query into thinking this is a page (necessary for wp_title() at least)
                  * Not sure if it's cheating or not to modify global variables in a filter
