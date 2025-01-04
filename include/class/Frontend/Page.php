@@ -185,7 +185,7 @@ class Page {
             $retval = ob_get_contents();
             ob_end_clean();
         } else {
-            $retval = __('Content not found', 'MADkitchen');
+            $retval = __('Content not found. Check your MADkitchen module template file.', 'MADkitchen');
         }
 
         return $retval;
